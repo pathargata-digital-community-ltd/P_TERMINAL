@@ -3,69 +3,186 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Master Bot Controller - Secure</title>
+    <title>TERMINAL - MASTER BOT CONTROLLER</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap');
+        
+        body { 
+            background-color: #050505; 
+            color: #0f0; 
+            font-family: 'Share Tech Mono', monospace; 
+        }
+
+        /* CRT Scanline Effect */
+        body::after {
+            content: "";
+            position: fixed;
+            top: 0; left: 0; width: 100vw; height: 100vh;
+            background: repeating-linear-gradient(0deg, rgba(0,0,0,0.15), rgba(0,0,0,0.15) 1px, transparent 1px, transparent 2px);
+            pointer-events: none;
+            z-index: 50;
+        }
+
+        .neon-border { border: 1px solid #0f0; box-shadow: 0 0 10px rgba(0, 255, 0, 0.2); }
+        .neon-text { text-shadow: 0 0 8px #0f0; }
+        
+        .tab-btn { border-bottom: 2px solid #0a2e0a; color: #4d994d; }
+        .tab-btn.active { border-bottom: 2px solid #0f0; color: #0f0; text-shadow: 0 0 5px #0f0; background: rgba(0, 255, 0, 0.05); }
+        .hidden-tab { display: none; }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: #000; border-left: 1px solid #0a2e0a; }
+        ::-webkit-scrollbar-thumb { background: #0f0; }
+
+        /* Form Elements overrides */
+        select, textarea, input[type="file"] {
+            background-color: #000 !important;
+            color: #0f0 !important;
+            border: 1px solid #0a2e0a !important;
+        }
+        select:focus, textarea:focus {
+            border: 1px solid #0f0 !important;
+            outline: none;
+            box-shadow: 0 0 5px rgba(0, 255, 0, 0.3);
+        }
+        input[type="file"]::file-selector-button {
+            background-color: #0f0;
+            color: #000;
+            border: none;
+            font-family: 'Share Tech Mono', monospace;
+            padding: 5px 10px;
+            cursor: pointer;
+        }
+    </style>
 </head>
-<body class="bg-gray-100 p-4 font-sans pb-20">
+<body class="pb-20 selection:bg-green-500 selection:text-black">
 
     <!-- Security Loading Screen -->
-    <div id="loading-screen" class="text-center mt-20">
-        <i class="fa-solid fa-shield-halved text-5xl text-blue-500 mb-3 animate-pulse"></i>
-        <h2 class="text-xl font-bold text-gray-700">সিকিউরিটি চেক চলছে...</h2>
-        <p class="text-sm text-gray-500">দয়া করে অপেক্ষা করুন</p>
+    <div id="loading-screen" class="flex flex-col items-center justify-center h-screen z-40 relative">
+        <i class="fa-solid fa-user-secret text-7xl text-green-500 mb-4 animate-pulse neon-text"></i>
+        <h2 class="text-2xl font-bold text-green-500">BYPASSING SECURITY PROTOCOLS <span class="animate-ping">_</span></h2>
+        <p class="text-sm text-green-800 mt-2">[ SYSTEM INITIALIZATION IN PROGRESS ]</p>
     </div>
 
-    <!-- Main Content (Hidden by default, shown only to admins) -->
-    <div id="main-content" class="hidden max-w-md mx-auto bg-white rounded-xl shadow-lg p-5 mt-2">
-        <div class="text-center mb-5 border-b pb-4">
-            <i class="fa-solid fa-robot text-4xl text-blue-600 mb-2 animate-bounce"></i>
-            <h1 class="text-xl font-bold text-gray-800">মাস্টার বট কন্ট্রোলার</h1>
-            <p id="status-text" class="text-xs font-bold text-red-500 mt-1">স্ট্যাটাস: চেক করা হচ্ছে...</p>
+    <!-- Main Content -->
+    <div id="main-content" class="hidden max-w-lg mx-auto bg-black rounded-none border border-green-500 shadow-[0_0_15px_rgba(0,255,0,0.2)] mt-6 overflow-hidden relative z-40">
+        
+        <!-- Header -->
+        <div class="border-b border-green-500 p-4 text-left bg-[#050f05]">
+            <h1 class="text-lg font-bold text-green-500 neon-text"><i class="fa-solid fa-terminal mr-2"></i> root@master-bot:~#</h1>
+            <p id="status-text" class="text-[10px] mt-2 inline-block px-2 py-1 border border-green-800 bg-black text-green-400">[ STATUS: CHECKING... ]</p>
         </div>
 
-        <!-- Section 1: Bot Initialization -->
-        <div class="mb-5 bg-blue-50 p-3 rounded-lg border border-blue-100">
-            <h3 class="text-sm font-bold text-blue-800 mb-2"><i class="fa-solid fa-users mr-1"></i> ২০০ বট সেটআপ</h3>
-            <p class="text-[10px] text-gray-600 mb-2">প্রথমবার এটি ক্লিক করে ২০০টি একাউন্ট তৈরি করে নিন।</p>
-            <button id="btn-setup-bots" class="w-full bg-blue-600 text-white font-bold py-2 rounded shadow hover:bg-blue-700 text-sm transition">
-                ২০০ বট তৈরি করুন
-            </button>
+        <!-- Tabs -->
+        <div class="flex border-b border-green-900 bg-black">
+            <button onclick="switchTab('control')" id="tab-control" class="tab-btn active flex-1 py-3 text-sm transition hover:bg-[#050f05] uppercase tracking-wider"><i class="fa-solid fa-bolt mr-1"></i> exec</button>
+            <button onclick="switchTab('gallery')" id="tab-gallery" class="tab-btn flex-1 py-3 text-sm transition hover:bg-[#050f05] uppercase tracking-wider"><i class="fa-solid fa-database mr-1"></i> data</button>
+            <button onclick="switchTab('texts')" id="tab-texts" class="tab-btn flex-1 py-3 text-sm transition hover:bg-[#050f05] uppercase tracking-wider"><i class="fa-solid fa-code mr-1"></i> script</button>
         </div>
 
-        <!-- Section 2: Image Uploader for Bots -->
-        <div class="mb-5 bg-orange-50 p-3 rounded-lg border border-orange-100">
-            <h3 class="text-sm font-bold text-orange-800 mb-2"><i class="fa-solid fa-cloud-arrow-up mr-1"></i> বটের জন্য ছবি আপলোড</h3>
-            <p class="text-[10px] text-gray-600 mb-2">এখান থেকে ছবি দিলে বট সেগুলো তার পোস্টে ব্যবহার করবে।</p>
-            <input type="file" id="bot-image-upload" accept="image/*" class="w-full text-xs mb-2 file:mr-4 file:py-1 file:px-3 file:rounded file:border-0 file:text-xs file:bg-orange-200 file:text-orange-800">
-            <button id="btn-upload-img" class="w-full bg-orange-500 text-white font-bold py-2 rounded shadow hover:bg-orange-600 text-sm transition">
-                আপলোড করুন
-            </button>
-            <p id="upload-status" class="text-[10px] font-bold text-center mt-1 text-green-600"></p>
-        </div>
+        <!-- TAB 1: BOT CONTROL -->
+        <div id="content-control" class="p-5">
+            <!-- Start/Stop -->
+            <div class="flex gap-3 mb-5 border-b border-green-900 pb-5">
+                <button id="btn-start" class="flex-1 border border-green-500 text-green-500 font-bold py-3 hover:bg-green-500 hover:text-black transition uppercase tracking-widest flex items-center justify-center text-sm shadow-[0_0_8px_rgba(0,255,0,0.2)]">
+                    <i class="fa-solid fa-play mr-2"></i> INITIATE
+                </button>
+                <button id="btn-stop" disabled class="flex-1 border border-red-900 text-red-900 font-bold py-3 opacity-50 cursor-not-allowed uppercase tracking-widest flex items-center justify-center text-sm">
+                    <i class="fa-solid fa-skull mr-2"></i> TERMINATE
+                </button>
+            </div>
 
-        <!-- Section 3: Start/Stop Controls -->
-        <div class="flex gap-3 mb-5">
-            <button id="btn-start" class="flex-1 bg-green-600 text-white font-bold py-3 rounded-lg shadow hover:bg-green-700 active:scale-95 transition flex items-center justify-center">
-                <i class="fa-solid fa-play mr-2"></i> চালু করুন
-            </button>
-            <button id="btn-stop" disabled class="flex-1 bg-gray-400 text-white font-bold py-3 rounded-lg shadow cursor-not-allowed transition flex items-center justify-center">
-                <i class="fa-solid fa-stop mr-2"></i> বন্ধ করুন
-            </button>
-        </div>
+            <!-- Setup Bots -->
+            <div class="mb-5 bg-[#020a02] p-4 border border-green-900 shadow-inner relative">
+                <div class="absolute top-0 left-0 w-2 h-2 border-t border-l border-green-500"></div>
+                <div class="absolute bottom-0 right-0 w-2 h-2 border-b border-r border-green-500"></div>
+                
+                <h3 class="text-sm font-bold text-green-500 mb-2"><i class="fa-solid fa-network-wired mr-1"></i> [ GENERATE 200 NODES ]</h3>
+                <p class="text-[10px] text-green-700 mb-3">> Execute command to deploy bot accounts onto the network.</p>
+                <button id="btn-setup-bots" class="w-full border border-green-600 text-green-500 py-2 hover:bg-green-600 hover:text-black text-sm transition uppercase tracking-wider">
+                    Deploy Nodes
+                </button>
+            </div>
 
-        <!-- Section 4: Logs -->
-        <div class="bg-gray-900 rounded-lg p-3 h-64 overflow-y-auto">
-            <p class="text-xs text-green-400 mb-2 border-b border-gray-700 pb-1">বট অ্যাক্টিভিটি লগ:</p>
-            <div id="log-container" class="text-[10px] text-gray-300 space-y-2 font-mono flex flex-col-reverse">
-                <!-- Logs here -->
+            <!-- Logs -->
+            <div class="bg-black border border-green-800 p-3 h-56 overflow-y-auto relative">
+                <p class="text-xs text-green-600 mb-2 border-b border-green-900 pb-1">root@server/logs: <span class="animate-pulse">_</span></p>
+                <div id="log-container" class="text-[11px] space-y-2 flex flex-col-reverse"></div>
             </div>
         </div>
+
+        <!-- TAB 2: GALLERY & UPLOAD -->
+        <div id="content-gallery" class="p-5 hidden-tab">
+            <div class="mb-5 bg-[#020a02] p-4 border border-cyan-900 relative">
+                <div class="absolute top-0 left-0 w-2 h-2 border-t border-l border-cyan-500"></div>
+                <h3 class="text-sm font-bold text-cyan-500 mb-3"><i class="fa-solid fa-cloud-arrow-up mr-1"></i> [ UPLOAD_PAYLOAD ]</h3>
+                <select id="upload-category" class="w-full text-xs p-2 mb-3">
+                    <option value="post_general">GLOBAL_POST (General)</option>
+                    <option value="post_male">TARGET_MALE_POST</option>
+                    <option value="post_female">TARGET_FEMALE_POST</option>
+                    <option value="profile_male">MALE_AVATAR (DP)</option>
+                    <option value="profile_female">FEMALE_AVATAR (DP)</option>
+                </select>
+                <input type="file" id="bot-image-upload" accept="image/*" class="w-full text-xs mb-3">
+                <button id="btn-upload-img" class="w-full border border-cyan-600 text-cyan-500 py-2 hover:bg-cyan-600 hover:text-black text-sm transition uppercase">Inject File</button>
+                <p id="upload-status" class="text-[10px] font-bold text-center mt-2 text-cyan-400"></p>
+            </div>
+
+            <div class="bg-black border border-green-900 p-3">
+                <h3 class="text-sm font-bold text-green-500 mb-3 flex justify-between items-center border-b border-green-900 pb-2">
+                    <span><i class="fa-solid fa-images mr-1"></i> [ DATABASE ]</span>
+                    <span class="bg-green-900 text-black px-2 py-0.5 text-[10px]" id="img-count">0</span>
+                </h3>
+                <select id="gallery-filter" class="w-full text-xs p-2 mb-3">
+                    <option value="all">SELECT * FROM gallery</option>
+                    <option value="post_general">WHERE type='General'</option>
+                    <option value="post_male">WHERE type='Male Post'</option>
+                    <option value="post_female">WHERE type='Female Post'</option>
+                    <option value="profile_male">WHERE type='Male DP'</option>
+                    <option value="profile_female">WHERE type='Female DP'</option>
+                </select>
+                <div id="image-gallery" class="grid grid-cols-3 gap-2 max-h-56 overflow-y-auto p-1">
+                    <p class="col-span-3 text-center text-xs text-green-800 py-5">NO DATA FOUND</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB 3: CAPTIONS & COMMENTS SETTINGS -->
+        <div id="content-texts" class="p-5 hidden-tab">
+            <!-- Add New Text -->
+            <div class="mb-5 bg-[#020a02] p-4 border border-purple-900 relative">
+                <div class="absolute top-0 left-0 w-2 h-2 border-t border-l border-purple-500"></div>
+                <h3 class="text-sm font-bold text-purple-500 mb-3"><i class="fa-solid fa-plus mr-1"></i> [ INJECT_SCRIPT ]</h3>
+                <select id="text-category" class="w-full text-xs p-2 mb-3">
+                    <option value="statusText">TEXT_STATUS (String)</option>
+                    <option value="photoCaption">IMAGE_CAPTION (String)</option>
+                    <option value="comments">AUTO_COMMENT (String)</option>
+                </select>
+                <textarea id="new-text-input" rows="3" placeholder="Enter variable data..." class="w-full text-xs p-2 mb-3 resize-none"></textarea>
+                <button id="btn-add-text" class="w-full border border-purple-600 text-purple-500 py-2 hover:bg-purple-600 hover:text-black text-sm transition uppercase">Compile & Save</button>
+            </div>
+
+            <!-- View Saved Texts -->
+            <div class="bg-black border border-green-900 p-3">
+                <select id="view-text-category" class="w-full text-xs p-2 mb-3 border border-green-900">
+                    <option value="statusText">READ status_array</option>
+                    <option value="photoCaption">READ caption_array</option>
+                    <option value="comments">READ comment_array</option>
+                </select>
+                <div id="text-list-container" class="space-y-2 max-h-56 overflow-y-auto pr-1">
+                    <p class="text-center text-xs text-green-800 py-5">LOADING...</p>
+                </div>
+            </div>
+        </div>
+
     </div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-        import { getDatabase, ref, push, set, get } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+        import { getDatabase, ref, push, set, get, remove } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
         import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
         const firebaseConfig = {
@@ -78,75 +195,64 @@
         const db = getDatabase(app);
         const auth = getAuth(app);
 
-        // --- Security Check: Admin Verification ---
+        const bgColors = [
+            "", 
+            "", 
+            "linear-gradient(to right, #ff5f6d, #ffc371)",
+            "linear-gradient(to right, #2193b0, #6dd5ed)",
+            "linear-gradient(to right, #cc2b5e, #753a88)",
+            "linear-gradient(to right, #11998e, #38ef7d)"
+        ];
+
+        window.switchTab = (tabName) => {
+            ['control', 'gallery', 'texts'].forEach(t => {
+                document.getElementById('content-' + t).classList.add('hidden-tab');
+                document.getElementById('tab-' + t).classList.remove('active');
+            });
+            document.getElementById('content-' + tabName).classList.remove('hidden-tab');
+            document.getElementById('tab-' + tabName).classList.add('active');
+        }
+
         onAuthStateChanged(auth, async (user) => {
             if (user) {
                 const snap = await get(ref(db, `users/${user.uid}/role`));
                 if (snap.val() === 'admin') {
-                    // যদি অ্যাডমিন হয়, তবে লোডিং সরিয়ে মেইন প্যানেল দেখাবে
                     document.getElementById('loading-screen').style.display = 'none';
                     document.getElementById('main-content').classList.remove('hidden');
-                    document.getElementById('status-text').innerText = "স্ট্যাটাস: অ্যাডমিন ভেরিফাইড (বট বন্ধ আছে)";
-                    document.getElementById('status-text').className = "text-xs font-bold text-green-600 mt-1";
-                    
-                    // অ্যাডমিন ভেরিফাই হওয়ার পরেই বটের ডাটা লোড হবে
+                    document.getElementById('status-text').innerText = "[ AUTH_SUCCESS : SYSTEM IDLE ]";
                     loadBotData();
                 } else {
-                    // অ্যাডমিন না হলে
-                    document.body.innerHTML = `
-                        <div class="flex flex-col items-center justify-center h-screen bg-gray-100">
-                            <i class="fa-solid fa-triangle-exclamation text-6xl text-red-500 mb-4 animate-bounce"></i>
-                            <h1 class="text-2xl font-bold text-red-600">Access Denied!</h1>
-                            <p class="text-gray-600 mt-2">দুঃখিত, আপনি অ্যাডমিন নন। আপনার এই পেজে প্রবেশের অনুমতি নেই।</p>
-                        </div>`;
+                    document.body.innerHTML = `<div class="flex flex-col items-center justify-center h-screen bg-black"><h1 class="text-3xl font-bold text-red-600 neon-text"><i class="fa-solid fa-triangle-exclamation"></i> ACCESS DENIED</h1><p class="text-red-800 mt-2 font-mono">UNAUTHORIZED USER DETECTED</p></div>`;
                 }
             } else {
-                // লগইন করা না থাকলে
-                document.body.innerHTML = `
-                    <div class="flex flex-col items-center justify-center h-screen bg-gray-100">
-                        <i class="fa-solid fa-lock text-6xl text-gray-400 mb-4"></i>
-                        <h1 class="text-2xl font-bold text-gray-800">Authentication Required</h1>
-                        <p class="text-gray-600 mt-2">দয়া করে মূল অ্যাপ থেকে আগে অ্যাডমিন আইডি লগইন করুন।</p>
-                    </div>`;
+                document.body.innerHTML = `<div class="flex flex-col items-center justify-center h-screen bg-black"><h1 class="text-xl font-bold text-green-500 font-mono">> LOGIN REQUIRED TO ACCESS TERMINAL _</h1></div>`;
             }
         });
 
-        // --- পাথরঘাটার ইউনিয়ন ও গ্রামের তালিকা ---
         const locations = {
-            "Patharghata Union Sadar": ["পাথরঘাটা", "গহরপুর", "নিজলাঠিমারা", "হাতেমপুর", "বড়ইতলা", "বড় টেংরা", "কোড়ালিয়া", "রুহিতা", "পদ্মা", "হাড়িটানা", "বাদুরতলা", "চরলাঠিমারা"],
-            "Char Duani Union": ["চরদুয়ানী", "দক্ষিণ চরদুয়ানী", "মঠের খাল", "হোগলাপাশা", "গাববাড়িয়া"],
-            "Kakchira Union": ["কাকচিরা", "জালিয়াঘাটা", "রূপধন", "বাইলাচারা"],
-            "Kalmegha Union": ["কালমেঘা", "ঘুটাবাছা", "কুপদোন", "পশ্চিম কালমেঘা"],
-            "Kathaltoli Union": ["কাঁঠালতলী", "তালতলী", "সাপলেজা", "করুণা"],
-            "Nachnapara Union": ["নাচনাপাড়া", "জ্ঞানপাড়া", "বাঁশতলা", "মানিকখালী"],
-            "Raihanpur Union": ["রায়হানপুর", "শতকর", "লেমুয়া", "হরিণঘাটা"]
+            "Patharghata Union Sadar": ["পাথরঘাটা", "গহরপুর", "নিজলাঠিমারা", "হাতেমপুর", "বড়ইতলা", "বড় টেংরা", "কোড়ালিয়া"],
+            "Char Duani Union": ["চরদুয়ানী", "দক্ষিণ চরদুয়ানী", "মঠের খাল", "হোগলাপাশা", "গাববাড়িয়া"]
         };
 
-        const firstNames = ["সাকিব", "তামিম", "রহিম", "করিম", "সুমাইয়া", "ফাতেমা", "তানিয়া", "আরিফ", "রিয়াদ", "মেহেদী", "হাবিব", "রফিক", "শফিক", "মুসফিক", "নাঈম", "আকাশ", "সাগর", "নদী", "বৃষ্টি", "মেঘলা", "সাদিয়া", "মারিয়া", "জাহিদ", "তারেক", "ইমরান", "রাসেল", "রুবেল", "রনি", "জনি", "রাজু", "সাব্বির", "হাসান", "হোসেন", "আব্দুল্লাহ", "আয়েশা", "খাদিজা", "মাহি", "সিয়াম", "রাফি", "শারমিন"];
+        const maleNames = ["সাকিব", "তামিম", "রহিম", "করিম", "আরিফ", "রিয়াদ", "মেহেদী", "হাবিব", "রফিক", "শফিক", "মুসফিক", "নাঈম", "আকাশ", "সাগর", "জাহিদ", "তারেক", "ইমরান", "রাসেল", "রুবেল", "রনি", "জনি", "রাজু", "সাব্বির", "হাসান", "হোসেন", "আব্দুল্লাহ", "সিয়াম", "রাফি"];
+        const femaleNames = ["সুমাইয়া", "ফাতেমা", "তানিয়া", "নদী", "বৃষ্টি", "মেঘলা", "সাদিয়া", "মারিয়া", "আয়েশা", "খাদিজা", "মাহি", "শারমিন", "নুসরাত", "জুলিয়া", "রোকসানা", "সুমী", "রুমি", "মীম"];
         const lastNames = ["ইসলাম", "রহমান", "হোসেন", "হাসান", "মিয়া", "হাওলাদার", "কাজী", "সিকদার", "খান", "চৌধুরী", "আহমেদ", "আক্তার", "বেগম", "খাতুন", "শেখ", "মোল্লা"];
-        const professions = ["কৃষক", "ব্যবসায়ী", "ছাত্র", "ছাত্রী", "শিক্ষক", "প্রবাসী", "চাকরিজীবী", "গৃহিনী", "দোকানদার", "ফ্রিল্যান্সার"];
-
-        const postTexts = [
-            "পাথরঘাটায় আজকের আবহাওয়া কেমন? এখানে খুব রোদ।", "সবাই কেমন আছেন? ডিজিটাল পাথরঘাটা অ্যাপটি বেশ ভালো কাজ করছে।", "কালকে কি কাকচিরা বাজারে হাট বসবে? কেউ জানলে কমেন্ট করুন।", "উপজেলা স্বাস্থ্য কমপ্লেক্সে কি বাচ্চাদের ডাক্তার বসেন প্রতিদিন?", "আজকে তো মনে হচ্ছে বৃষ্টি নামবে। সাবধানে থাকবেন সবাই।", "বিদ্যুৎ তো অনেকক্ষণ ধরে নেই, আপনাদের এলাকায় কি অবস্থা?", "মাঠে ফসলের অবস্থা আলহামদুলিল্লাহ অনেক ভালো।"
-        ];
-        
-        const photoCaptions = [
-            "গ্রামের প্রাকৃতিক দৃশ্য সবসময় মন ভালো করে দেয়। ❤️", "আজকের বাজারের অবস্থা। দাম বেশ চড়া!", "আমাদের এলাকার সুন্দর একটি মুহূর্ত।", "ঘুরতে গিয়েছিলাম, জায়গাটা আসলেই অসাধারণ।", "অপূর্ব দৃশ্য! সুবহানাল্লাহ।"
-        ];
-
-        const commentTexts = [
-            "দারুণ ছবি! সুন্দর লাগছে।", "একমত পোষণ করছি।", "হ্যাঁ ভাই, একদম ঠিক।", "ধন্যবাদ শেয়ার করার জন্য।", "আমিও জায়গাটাতে গিয়েছিলাম।", "মাশাআল্লাহ খুব সুন্দর!", "তথ্যটি দেওয়ার জন্য ধন্যবাদ ভাই।"
-        ];
 
         let isRunning = false;
         let postTimer, engageTimer;
         let generatedBots = [];
-        let uploadedBotImages = [];
+        let categorizedImages = { post_general: [], post_male: [], post_female: [], profile_male: [], profile_female: [] };
+        
+        let botTexts = {
+            statusText: ["পাথরঘাটায় আজকের আবহাওয়া কেমন?"],
+            photoCaption: ["গ্রামের প্রাকৃতিক দৃশ্য সবসময় মন ভালো করে দেয়। ❤️"],
+            comments: ["দারুণ ছবি! সুন্দর লাগছে।"]
+        };
 
-        function logAction(msg, color = "text-gray-300") {
+        function logAction(msg, color = "text-green-500") {
             const time = new Date().toLocaleTimeString();
             const logDiv = document.getElementById('log-container');
-            logDiv.insertAdjacentHTML('afterbegin', `<p class="${color}">[${time}] ${msg}</p>`);
+            logDiv.insertAdjacentHTML('afterbegin', `<p class="${color}">[${time}] > ${msg}</p>`);
         }
 
         function isSleepingTime() {
@@ -154,120 +260,118 @@
             return hour >= 1 && hour < 6;
         }
 
-        // --- ২০০ বট তৈরি করার ফাংশন ---
-        document.getElementById('btn-setup-bots').onclick = async () => {
-            const btn = document.getElementById('btn-setup-bots');
-            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> তৈরি হচ্ছে...';
-            btn.disabled = true;
-
-            const unions = Object.keys(locations);
-            let bots = [];
-
-            for(let i=1; i<=200; i++) {
-                const fname = firstNames[Math.floor(Math.random() * firstNames.length)];
-                const lname = lastNames[Math.floor(Math.random() * lastNames.length)];
-                const union = unions[Math.floor(Math.random() * unions.length)];
-                const villages = locations[union];
-                const village = villages[Math.floor(Math.random() * villages.length)];
-                const profession = professions[Math.floor(Math.random() * professions.length)];
-                
-                const avatarNum = Math.floor(Math.random() * 70) + 1;
-                const profilePic = `https://i.pravatar.cc/150?img=${avatarNum}`;
-
-                const botData = {
-                    uid: `auto_bot_${i}`,
-                    name: `${fname} ${lname}`,
-                    profile_pic: profilePic,
-                    union: union,
-                    village: village,
-                    profession: profession,
-                    role: 'user',
-                    isVerified: false,
-                    joinDate: new Date().toLocaleDateString()
-                };
-                bots.push(botData);
+        async function loadBotData() {
+            const botsSnap = await get(ref(db, 'bot_settings/bot_profiles'));
+            if(botsSnap.exists()) generatedBots = botsSnap.val();
+            
+            const imgsSnap = await get(ref(db, 'bot_settings/images'));
+            if(imgsSnap.exists()) {
+                const imgData = imgsSnap.val();
+                categorizedImages.post_general = imgData.post_general ? Object.values(imgData.post_general) : [];
+                categorizedImages.post_male = imgData.post_male ? Object.values(imgData.post_male) : [];
+                categorizedImages.post_female = imgData.post_female ? Object.values(imgData.post_female) : [];
+                categorizedImages.profile_male = imgData.profile_male ? Object.values(imgData.profile_male) : [];
+                categorizedImages.profile_female = imgData.profile_female ? Object.values(imgData.profile_female) : [];
+                updateGalleryUI();
             }
 
-            try {
-                for (const bot of bots) {
-                    await set(ref(db, 'users/' + bot.uid), bot);
-                }
-                await set(ref(db, 'bot_settings/bot_profiles'), bots);
-                
-                logAction("✅ সফলভাবে ২০০টি বট একাউন্ট তৈরি করা হয়েছে!", "text-green-400");
-                btn.innerHTML = 'বট তৈরি সম্পন্ন';
-                generatedBots = bots;
-            } catch(e) {
-                logAction("Error: " + e.message, "text-red-400");
-                btn.innerHTML = 'আবার চেষ্টা করুন';
-                btn.disabled = false;
+            const textsSnap = await get(ref(db, 'bot_settings/texts'));
+            if(textsSnap.exists()) {
+                const tData = textsSnap.val();
+                botTexts.statusText = tData.statusText ? Object.values(tData.statusText).map(i=>i.text) : botTexts.statusText;
+                botTexts.photoCaption = tData.photoCaption ? Object.values(tData.photoCaption).map(i=>i.text) : botTexts.photoCaption;
+                botTexts.comments = tData.comments ? Object.values(tData.comments).map(i=>i.text) : botTexts.comments;
             }
-        };
+            renderTextList();
+        }
 
-        // --- ছবি আপলোড ফাংশন (Cloudinary) ---
+        document.getElementById('btn-add-text').onclick = async () => {
+            const cat = document.getElementById('text-category').value;
+            const text = document.getElementById('new-text-input').value.trim();
+            if(!text) return alert('[ERROR] NULL_STRING_DETECTED');
+            
+            const btn = document.getElementById('btn-add-text');
+            btn.innerText = "COMPILING...";
+            
+            await push(ref(db, `bot_settings/texts/${cat}`), {text});
+            document.getElementById('new-text-input').value = "";
+            btn.innerText = "Compile & Save";
+            loadBotData();
+        }
+
+        function renderTextList() {
+            const cat = document.getElementById('view-text-category').value;
+            const container = document.getElementById('text-list-container');
+            const texts = botTexts[cat] || [];
+            
+            if(texts.length > 0) {
+                container.innerHTML = texts.map(t => `<div class="bg-[#050f05] p-2 border border-green-900 text-[10px] text-green-400">>> ${t}</div>`).join('');
+            } else {
+                container.innerHTML = '<p class="text-center text-xs text-green-800 py-5">NO DATA FOUND</p>';
+            }
+        }
+        document.getElementById('view-text-category').onchange = renderTextList;
+
+        function updateGalleryUI(filter = 'all') {
+            const gallery = document.getElementById('image-gallery');
+            const count = document.getElementById('img-count');
+            
+            let displayImages = [];
+            if (filter === 'all') {
+                Object.values(categorizedImages).forEach(arr => displayImages.push(...arr));
+            } else {
+                displayImages = categorizedImages[filter] || [];
+            }
+
+            count.innerText = displayImages.length;
+            
+            if (displayImages.length > 0) {
+                gallery.innerHTML = displayImages.map(img => 
+                    `<a href="${img}" target="_blank" class="block border border-green-800 hover:border-green-400 p-0.5 transition">
+                        <img src="${img}" class="w-full h-20 object-cover opacity-80 hover:opacity-100 filter grayscale hover:grayscale-0 cursor-pointer">
+                    </a>`
+                ).join('');
+            } else {
+                gallery.innerHTML = `<p class="col-span-3 text-center text-xs text-green-800 py-5">NO DATA FOUND</p>`;
+            }
+        }
+        document.getElementById('gallery-filter').onchange = (e) => updateGalleryUI(e.target.value);
+
         document.getElementById('btn-upload-img').onclick = async () => {
             const fileInput = document.getElementById('bot-image-upload');
+            const category = document.getElementById('upload-category').value;
             const status = document.getElementById('upload-status');
             
-            if (!fileInput.files || fileInput.files.length === 0) {
-                status.innerText = "আগে একটি ছবি সিলেক্ট করুন!";
-                status.className = "text-[10px] font-bold text-center mt-1 text-red-600";
-                return;
-            }
+            if (!fileInput.files || fileInput.files.length === 0) return status.innerText = "[ERROR] FILE_NOT_FOUND";
 
             const btn = document.getElementById('btn-upload-img');
-            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> আপলোড হচ্ছে...';
-            btn.disabled = true;
-            status.innerText = "";
+            btn.innerText = 'UPLOADING...';
 
             const formData = new FormData();
             formData.append('file', fileInput.files[0]);
             formData.append('upload_preset', 'Pathargata digital');
 
             try {
-                const res = await fetch(`https://api.cloudinary.com/v1_1/dl1auoanl/auto/upload`, {
-                    method: 'POST',
-                    body: formData
-                });
+                const res = await fetch(`https://api.cloudinary.com/v1_1/dl1auoanl/auto/upload`, { method: 'POST', body: formData });
                 const data = await res.json();
                 
                 if (data.secure_url) {
-                    await push(ref(db, 'bot_settings/uploaded_images'), data.secure_url);
-                    status.innerText = "ছবি সফলভাবে সেভ হয়েছে!";
-                    status.className = "text-[10px] font-bold text-center mt-1 text-green-600";
+                    await push(ref(db, `bot_settings/images/${category}`), data.secure_url);
+                    status.innerText = "[SUCCESS] PAYLOAD_INJECTED";
                     fileInput.value = ""; 
-                    
-                    uploadedBotImages.push(data.secure_url);
-                    logAction("🖼️ বটের জন্য নতুন ছবি আপলোড করা হয়েছে।", "text-orange-400");
+                    loadBotData();
                 }
             } catch (e) {
-                status.innerText = "আপলোড ফেইল করেছে!";
-                status.className = "text-[10px] font-bold text-center mt-1 text-red-600";
+                status.innerText = "[ERROR] UPLOAD_FAILED";
             } finally {
-                btn.innerHTML = 'আপলোড করুন';
-                btn.disabled = false;
+                btn.innerText = 'Inject File';
             }
         };
-
-        // --- কোর বট লজিক ---
-        async function loadBotData() {
-            const botsSnap = await get(ref(db, 'bot_settings/bot_profiles'));
-            if(botsSnap.exists()) generatedBots = botsSnap.val();
-            
-            const imgsSnap = await get(ref(db, 'bot_settings/uploaded_images'));
-            if(imgsSnap.exists()) uploadedBotImages = Object.values(imgsSnap.val());
-        }
 
         async function autoPostLoop() {
             if (!isRunning) return;
             if (isSleepingTime()) {
-                logAction("রাত গভীর হয়েছে। বট ঘুমাচ্ছে... 😴", "text-yellow-400");
                 postTimer = setTimeout(autoPostLoop, 60 * 60 * 1000);
-                return;
-            }
-
-            if(generatedBots.length === 0) {
-                logAction("বট লিস্ট খালি! আগে বট সেটআপ করুন।", "text-red-400");
                 return;
             }
 
@@ -275,27 +379,32 @@
             const postTypeRoll = Math.random();
             let postContent = "";
             let postImages = [];
-            let logMsg = "";
+            let bgColor = "";
 
-            if (uploadedBotImages.length > 0 && postTypeRoll < 0.6) {
-                const randomImg = uploadedBotImages[Math.floor(Math.random() * uploadedBotImages.length)];
-                postImages = [randomImg];
-                if(Math.random() > 0.5) postContent = photoCaptions[Math.floor(Math.random() * photoCaptions.length)];
-                logMsg = `📸 ${bot.name} আপনার আপলোড করা ছবিসহ পোস্ট করেছে।`;
+            let allowedImages = [...categorizedImages.post_general];
+            if (bot.gender === 'Male') allowedImages.push(...categorizedImages.post_male);
+            else allowedImages.push(...categorizedImages.post_female);
+
+            if (allowedImages.length > 0 && postTypeRoll < 0.6) {
+                postImages = [allowedImages[Math.floor(Math.random() * allowedImages.length)]];
+                if(Math.random() > 0.4) postContent = botTexts.photoCaption[Math.floor(Math.random() * botTexts.photoCaption.length)];
+                logAction(`IMAGE_POST_EXECUTED // ID: ${bot.name}`, "text-cyan-400");
             } else {
-                postContent = postTexts[Math.floor(Math.random() * postTexts.length)];
-                logMsg = `📝 ${bot.name} স্ট্যাটাস দিয়েছে (টেক্সট)।`;
+                postContent = botTexts.statusText[Math.floor(Math.random() * botTexts.statusText.length)];
+                if (postContent && postContent.length < 100 && Math.random() < 0.3) {
+                    bgColor = bgColors[Math.floor(Math.random() * bgColors.length)];
+                }
+                logAction(`TEXT_POST_EXECUTED // ID: ${bot.name}`, "text-cyan-400");
             }
 
             try {
                 await push(ref(db, 'posts'), {
                     uid: bot.uid, author: bot.name, authorPic: bot.profile_pic,
                     content: postContent, images: postImages.length > 0 ? postImages : null,
-                    type: 'text', timestamp: Date.now(), privacy: 'public', 
+                    bgColor: bgColor, type: 'text', timestamp: Date.now(), privacy: 'public', 
                     union: bot.union, village: bot.village, authorRole: 'user'
                 });
-                logAction(logMsg, "text-blue-400");
-            } catch (e) { logAction("Error: " + e.message, "text-red-400"); }
+            } catch (e) {}
 
             const nextPostIn = Math.floor(Math.random() * (10800000 - 3600000)) + 3600000;
             postTimer = setTimeout(autoPostLoop, nextPostIn);
@@ -307,8 +416,6 @@
                 engageTimer = setTimeout(autoEngageLoop, 60 * 60 * 1000);
                 return;
             }
-
-            if(generatedBots.length === 0) return;
 
             try {
                 const snap = await get(ref(db, 'posts'));
@@ -324,50 +431,39 @@
 
                     if (Math.random() > 0.4) { 
                         await set(ref(db, `posts/${randomPostId}/likes/${bot.uid}`), true);
-                        logAction(`❤️ ${bot.name} একটি পোস্টে লাইক দিয়েছে।`, "text-green-400");
+                        logAction(`LIKE_INJECTED // TARGET: ${randomPostId.substring(0,6)}... BY: ${bot.name}`, "text-green-400");
                     } else { 
-                        const comment = commentTexts[Math.floor(Math.random() * commentTexts.length)];
+                        const comment = botTexts.comments[Math.floor(Math.random() * botTexts.comments.length)];
                         await push(ref(db, `posts/${randomPostId}/comments`), {
                             author: bot.name, authorUid: bot.uid, authorPic: bot.profile_pic,
                             text: comment, time: Date.now()
                         });
-                        logAction(`💬 ${bot.name} কমেন্ট করেছে: "${comment}"`, "text-purple-400");
+                        logAction(`COMMENT_DEPLOYED // TARGET: ${randomPostId.substring(0,6)}...`, "text-purple-400");
                     }
                 }
-            } catch (e) { logAction("Error: " + e.message, "text-red-400"); }
+            } catch (e) {}
 
             const nextEngageIn = Math.floor(Math.random() * (2100000 - 900000)) + 900000;
             engageTimer = setTimeout(autoEngageLoop, nextEngageIn);
         }
 
-        // --- স্টার্ট / স্টপ বাটন লজিক ---
         const btnStart = document.getElementById('btn-start');
         const btnStop = document.getElementById('btn-stop');
-        const statusText = document.getElementById('status-text');
 
-        btnStart.onclick = async () => {
-            logAction("বট ডাটা লোড হচ্ছে...", "text-yellow-400");
-            
-            if (generatedBots.length === 0) {
-                logAction("দয়া করে আগে '২০০ বট সেটআপ করুন' বাটনে ক্লিক করুন।", "text-red-400");
-                alert("দয়া করে উপরের নীল বাটনে ক্লিক করে আগে বটগুলো তৈরি করে নিন।");
-                return;
-            }
+        btnStart.onclick = () => {
+            if (generatedBots.length === 0) return alert("[WARNING] REQUIRE_NODES: Generate bot accounts first.");
+            if (botTexts.statusText.length === 0) return alert("[WARNING] REQUIRE_SCRIPT: Add status texts first.");
 
             isRunning = true;
-            statusText.innerText = "স্ট্যাটাস: ফুল অটোমেটিক বট চলছে...";
-            statusText.className = "text-xs font-bold text-green-500 mt-1";
+            document.getElementById('status-text').innerText = "[ STATUS: PROTOCOL_RUNNING... ]";
             
-            btnStart.disabled = true;
-            btnStart.classList.replace('bg-green-600', 'bg-gray-400');
-            btnStart.classList.add('cursor-not-allowed');
-            
-            btnStop.disabled = false;
-            btnStop.classList.replace('bg-gray-400', 'bg-red-600');
-            btnStop.classList.remove('cursor-not-allowed');
+            // Apply Hacker Theme UI logic for buttons
+            btnStart.disabled = true; 
+            btnStart.className = "flex-1 border border-green-900 text-green-900 font-bold py-3 uppercase tracking-widest opacity-50 cursor-not-allowed flex items-center justify-center text-sm";
+            btnStop.disabled = false; 
+            btnStop.className = "flex-1 border border-red-500 text-red-500 font-bold py-3 hover:bg-red-500 hover:text-black shadow-[0_0_8px_rgba(255,0,0,0.3)] transition uppercase tracking-widest flex items-center justify-center text-sm";
 
-            logAction("মাস্টার বট সিস্টেম চালু হয়েছে।", "text-green-400");
-            
+            logAction("MASTER_PROTOCOL_INITIALIZED", "text-yellow-400 font-bold");
             setTimeout(autoPostLoop, 2000);
             setTimeout(autoEngageLoop, 5000); 
         };
@@ -377,20 +473,16 @@
             clearTimeout(postTimer);
             clearTimeout(engageTimer);
 
-            statusText.innerText = "স্ট্যাটাস: অ্যাডমিন ভেরিফাইড (বট বন্ধ আছে)";
-            statusText.className = "text-xs font-bold text-green-600 mt-1";
+            document.getElementById('status-text').innerText = "[ STATUS: SYSTEM IDLE ]";
             
-            btnStop.disabled = true;
-            btnStop.classList.replace('bg-red-600', 'bg-gray-400');
-            btnStop.classList.add('cursor-not-allowed');
-            
-            btnStart.disabled = false;
-            btnStart.classList.replace('bg-gray-400', 'bg-green-600');
-            btnStart.classList.remove('cursor-not-allowed');
+            // Revert to Hacker Theme UI logic
+            btnStop.disabled = true; 
+            btnStop.className = "flex-1 border border-red-900 text-red-900 font-bold py-3 uppercase tracking-widest opacity-50 cursor-not-allowed flex items-center justify-center text-sm";
+            btnStart.disabled = false; 
+            btnStart.className = "flex-1 border border-green-500 text-green-500 font-bold py-3 hover:bg-green-500 hover:text-black shadow-[0_0_8px_rgba(0,255,0,0.2)] transition uppercase tracking-widest flex items-center justify-center text-sm";
 
-            logAction("বট সফলভাবে বন্ধ করা হয়েছে।", "text-red-400");
+            logAction("MASTER_PROTOCOL_TERMINATED", "text-red-500 font-bold");
         };
-
     </script>
 </body>
 </html>
