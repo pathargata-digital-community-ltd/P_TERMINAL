@@ -22,7 +22,7 @@
             top: 0; left: 0; width: 100vw; height: 100vh;
             background: repeating-linear-gradient(0deg, rgba(0,0,0,0.15), rgba(0,0,0,0.15) 1px, transparent 1px, transparent 2px);
             pointer-events: none;
-            z-index: 50;
+            z-index: 40;
         }
 
         .neon-border { border: 1px solid #0f0; box-shadow: 0 0 10px rgba(0, 255, 0, 0.2); }
@@ -56,19 +56,23 @@
             padding: 5px 10px;
             cursor: pointer;
         }
+        #cli-input:focus { border: none !important; box-shadow: none !important; outline: none !important;}
     </style>
 </head>
 <body class="pb-20 selection:bg-green-500 selection:text-black">
 
+    <!-- Matrix Rain Canvas -->
+    <canvas id="matrix-canvas" class="fixed top-0 left-0 w-full h-full z-50 pointer-events-none hidden opacity-80"></canvas>
+
     <!-- Security Loading Screen -->
-    <div id="loading-screen" class="flex flex-col items-center justify-center h-screen z-40 relative">
+    <div id="loading-screen" class="flex flex-col items-center justify-center h-screen z-30 relative">
         <i class="fa-solid fa-user-secret text-7xl text-green-500 mb-4 animate-pulse neon-text"></i>
         <h2 class="text-2xl font-bold text-green-500">BYPASSING SECURITY PROTOCOLS <span class="animate-ping">_</span></h2>
         <p class="text-sm text-green-800 mt-2">[ SYSTEM INITIALIZATION IN PROGRESS ]</p>
     </div>
 
     <!-- Main Content -->
-    <div id="main-content" class="hidden max-w-lg mx-auto bg-black rounded-none border border-green-500 shadow-[0_0_15px_rgba(0,255,0,0.2)] mt-6 overflow-hidden relative z-40">
+    <div id="main-content" class="hidden max-w-lg mx-auto bg-black rounded-none border border-green-500 shadow-[0_0_15px_rgba(0,255,0,0.2)] mt-6 overflow-hidden relative z-30">
         
         <!-- Header -->
         <div class="border-b border-green-500 p-4 text-left bg-[#050f05]">
@@ -78,12 +82,13 @@
 
         <!-- Tabs -->
         <div class="flex border-b border-green-900 bg-black">
-            <button onclick="switchTab('control')" id="tab-control" class="tab-btn active flex-1 py-3 text-sm transition hover:bg-[#050f05] uppercase tracking-wider"><i class="fa-solid fa-bolt mr-1"></i> exec</button>
-            <button onclick="switchTab('gallery')" id="tab-gallery" class="tab-btn flex-1 py-3 text-sm transition hover:bg-[#050f05] uppercase tracking-wider"><i class="fa-solid fa-database mr-1"></i> data</button>
-            <button onclick="switchTab('texts')" id="tab-texts" class="tab-btn flex-1 py-3 text-sm transition hover:bg-[#050f05] uppercase tracking-wider"><i class="fa-solid fa-code mr-1"></i> script</button>
+            <button onclick="switchTab('control')" id="tab-control" class="tab-btn active flex-1 py-3 text-xs transition hover:bg-[#050f05] uppercase tracking-wider"><i class="fa-solid fa-bolt mr-1"></i> exec</button>
+            <button onclick="switchTab('gallery')" id="tab-gallery" class="tab-btn flex-1 py-3 text-xs transition hover:bg-[#050f05] uppercase tracking-wider"><i class="fa-solid fa-database mr-1"></i> data</button>
+            <button onclick="switchTab('texts')" id="tab-texts" class="tab-btn flex-1 py-3 text-xs transition hover:bg-[#050f05] uppercase tracking-wider"><i class="fa-solid fa-code mr-1"></i> script</button>
+            <button onclick="switchTab('config')" id="tab-config" class="tab-btn flex-1 py-3 text-xs transition hover:bg-[#050f05] uppercase tracking-wider"><i class="fa-solid fa-gear mr-1"></i> sys</button>
         </div>
 
-        <!-- TAB 1: BOT CONTROL -->
+        <!-- TAB 1: BOT CONTROL (LOGS & CLI) -->
         <div id="content-control" class="p-5">
             <!-- Start/Stop -->
             <div class="flex gap-3 mb-5 border-b border-green-900 pb-5">
@@ -95,22 +100,18 @@
                 </button>
             </div>
 
-            <!-- Setup Bots -->
-            <div class="mb-5 bg-[#020a02] p-4 border border-green-900 shadow-inner relative">
-                <div class="absolute top-0 left-0 w-2 h-2 border-t border-l border-green-500"></div>
-                <div class="absolute bottom-0 right-0 w-2 h-2 border-b border-r border-green-500"></div>
-                
-                <h3 class="text-sm font-bold text-green-500 mb-2"><i class="fa-solid fa-network-wired mr-1"></i> [ GENERATE 200 NODES ]</h3>
-                <p class="text-[10px] text-green-700 mb-3">> Execute command to deploy bot accounts onto the network.</p>
-                <button id="btn-setup-bots" class="w-full border border-green-600 text-green-500 py-2 hover:bg-green-600 hover:text-black text-sm transition uppercase tracking-wider">
-                    Deploy Nodes
-                </button>
+            <!-- Enhanced Logs -->
+            <div class="bg-black border border-green-800 p-3 h-80 overflow-y-auto relative flex flex-col scroll-smooth" id="log-wrapper">
+                <div class="sticky top-0 bg-black z-10 border-b border-green-900 pb-1 mb-2 flex justify-between items-center">
+                    <p class="text-xs text-green-600">root@server/logs: <span class="animate-pulse">_</span></p>
+                </div>
+                <div id="log-container" class="text-[11px] space-y-2 flex-1"></div>
             </div>
 
-            <!-- Logs -->
-            <div class="bg-black border border-green-800 p-3 h-56 overflow-y-auto relative">
-                <p class="text-xs text-green-600 mb-2 border-b border-green-900 pb-1">root@server/logs: <span class="animate-pulse">_</span></p>
-                <div id="log-container" class="text-[11px] space-y-2 flex flex-col-reverse"></div>
+            <!-- Command Line Interface (CLI) -->
+            <div class="flex items-center bg-black border border-t-0 border-green-800 p-2 text-xs">
+                <span class="text-green-600 mr-2">>_</span>
+                <input type="text" id="cli-input" class="flex-1 bg-transparent border-none text-green-400 focus:outline-none focus:ring-0 shadow-none" placeholder="Type command (Use ↑/↓ for history)..." autocomplete="off" spellcheck="false">
             </div>
         </div>
 
@@ -120,8 +121,7 @@
                 <div class="absolute top-0 left-0 w-2 h-2 border-t border-l border-cyan-500"></div>
                 <h3 class="text-sm font-bold text-cyan-500 mb-3"><i class="fa-solid fa-cloud-arrow-up mr-1"></i> [ UPLOAD_PAYLOAD ]</h3>
                 
-                <!-- NEW: AI Features (Fully compatible with old code) -->
-                <input type="password" id="gemini-api-key" placeholder="Gemini AI API Key (Optional for auto caption)" class="w-full text-xs p-2 mb-2 border-cyan-900">
+                <input type="password" id="gemini-api-key" placeholder="Gemini AI API Key (For Captions & Comments)" class="w-full text-xs p-2 mb-2 border-cyan-900">
                 <input type="text" id="upload-caption" placeholder="Manual Caption (Leave empty for AI)" class="w-full text-xs p-2 mb-3">
 
                 <select id="upload-category" class="w-full text-xs p-2 mb-3">
@@ -157,7 +157,6 @@
 
         <!-- TAB 3: CAPTIONS & COMMENTS SETTINGS -->
         <div id="content-texts" class="p-5 hidden-tab">
-            <!-- Add New Text -->
             <div class="mb-5 bg-[#020a02] p-4 border border-purple-900 relative">
                 <div class="absolute top-0 left-0 w-2 h-2 border-t border-l border-purple-500"></div>
                 <h3 class="text-sm font-bold text-purple-500 mb-3"><i class="fa-solid fa-plus mr-1"></i> [ INJECT_SCRIPT ]</h3>
@@ -170,16 +169,30 @@
                 <button id="btn-add-text" class="w-full border border-purple-600 text-purple-500 py-2 hover:bg-purple-600 hover:text-black text-sm transition uppercase">Compile & Save</button>
             </div>
 
-            <!-- View Saved Texts -->
             <div class="bg-black border border-green-900 p-3">
                 <select id="view-text-category" class="w-full text-xs p-2 mb-3 border border-green-900">
                     <option value="statusText">READ status_array</option>
                     <option value="photoCaption">READ caption_array</option>
                     <option value="comments">READ comment_array</option>
                 </select>
-                <div id="text-list-container" class="space-y-2 max-h-56 overflow-y-auto pr-1">
+                <div id="text-list-container" class="space-y-1 max-h-56 overflow-y-auto pr-1">
                     <p class="text-center text-xs text-green-800 py-5">LOADING...</p>
                 </div>
+            </div>
+        </div>
+
+        <!-- TAB 4: SYSTEM CONFIG -->
+        <div id="content-config" class="p-5 hidden-tab">
+            <div class="bg-[#020a02] p-4 border border-green-900 shadow-inner relative">
+                <div class="absolute top-0 left-0 w-2 h-2 border-t border-l border-green-500"></div>
+                <div class="absolute bottom-0 right-0 w-2 h-2 border-b border-r border-green-500"></div>
+                
+                <h3 class="text-sm font-bold text-green-500 mb-2"><i class="fa-solid fa-network-wired mr-1"></i> [ DEPLOY / UPDATE NODES ]</h3>
+                <p class="text-xs text-green-700 mb-3">> Automatically generates 200 bots or updates existing ones with correct gender-based names & avatars.</p>
+                <p class="text-[10px] text-yellow-600 mb-4 border-l-2 border-yellow-600 pl-2">Warning: Executing this will overwrite existing bot configurations to ensure gender accuracy.</p>
+                <button id="btn-setup-bots" class="w-full border border-green-600 text-green-500 py-3 hover:bg-green-600 hover:text-black text-sm transition uppercase tracking-wider font-bold shadow-[0_0_8px_rgba(0,255,0,0.2)]">
+                    DEPLOY 200 NODES
+                </button>
             </div>
         </div>
 
@@ -201,8 +214,7 @@
         const auth = getAuth(app);
 
         const bgColors = [
-            "", 
-            "", 
+            "", "", 
             "linear-gradient(to right, #ff5f6d, #ffc371)",
             "linear-gradient(to right, #2193b0, #6dd5ed)",
             "linear-gradient(to right, #cc2b5e, #753a88)",
@@ -210,7 +222,7 @@
         ];
 
         window.switchTab = (tabName) => {
-            ['control', 'gallery', 'texts'].forEach(t => {
+            ['control', 'gallery', 'texts', 'config'].forEach(t => {
                 document.getElementById('content-' + t).classList.add('hidden-tab');
                 document.getElementById('tab-' + t).classList.remove('active');
             });
@@ -241,23 +253,33 @@
 
         const maleNames = ["সাকিব", "তামিম", "রহিম", "করিম", "আরিফ", "রিয়াদ", "মেহেদী", "হাবিব", "রফিক", "শফিক", "মুসফিক", "নাঈম", "আকাশ", "সাগর", "জাহিদ", "তারেক", "ইমরান", "রাসেল", "রুবেল", "রনি", "জনি", "রাজু", "সাব্বির", "হাসান", "হোসেন", "আব্দুল্লাহ", "সিয়াম", "রাফি"];
         const femaleNames = ["সুমাইয়া", "ফাতেমা", "তানিয়া", "নদী", "বৃষ্টি", "মেঘলা", "সাদিয়া", "মারিয়া", "আয়েশা", "খাদিজা", "মাহি", "শারমিন", "নুসরাত", "জুলিয়া", "রোকসানা", "সুমী", "রুমি", "মীম"];
-        const lastNames = ["ইসলাম", "রহমান", "হোসেন", "হাসান", "মিয়া", "হাওলাদার", "কাজী", "সিকদার", "খান", "চৌধুরী", "আহমেদ", "আক্তার", "বেগম", "খাতুন", "শেখ", "মোল্লা"];
+        
+        const maleLastNames = ["ইসলাম", "রহমান", "হোসেন", "হাসান", "মিয়া", "হাওলাদার", "কাজী", "সিকদার", "খান", "চৌধুরী", "আহমেদ", "শেখ", "মোল্লা", "মাহমুদ"];
+        const femaleLastNames = ["আক্তার", "বেগম", "খাতুন", "চৌধুরী", "ইসলাম", "খান"];
 
+        // Global State & History variables
         let isRunning = false;
         let postTimer, engageTimer;
         let generatedBots = [];
         let categorizedImages = { post_general: [], post_male: [], post_female: [], profile_male: [], profile_female: [] };
         
+        let commandHistory = [];
+        let historyIndex = -1;
+        let botsMuted = false; // Mute variable for CLI command
+
         let botTexts = {
-            statusText: ["পাথরঘাটায় আজকের আবহাওয়া কেমন?"],
-            photoCaption: ["গ্রামের প্রাকৃতিক দৃশ্য সবসময় মন ভালো করে দেয়। ❤️"],
-            comments: ["দারুণ ছবি! সুন্দর লাগছে।"]
+            statusText: [{key:'def', text:"পাথরঘাটায় আজকের আবহাওয়া কেমন?"}],
+            photoCaption: [{key:'def', text:"গ্রামের প্রাকৃতিক দৃশ্য সবসময় মন ভালো করে দেয়। ❤️"}],
+            comments: [{key:'def', text:"দারুণ ছবি! সুন্দর লাগছে।"}]
         };
 
+        // --- Terminal Logging ---
         function logAction(msg, color = "text-green-500") {
             const time = new Date().toLocaleTimeString();
             const logDiv = document.getElementById('log-container');
-            logDiv.insertAdjacentHTML('afterbegin', `<p class="${color}">[${time}] > ${msg}</p>`);
+            const logWrapper = document.getElementById('log-wrapper');
+            logDiv.insertAdjacentHTML('beforeend', `<p class="${color} break-words">[${time}] > ${msg}</p>`);
+            logWrapper.scrollTo({ top: logWrapper.scrollHeight, behavior: 'smooth' });
         }
 
         function isSleepingTime() {
@@ -265,175 +287,378 @@
             return hour >= 1 && hour < 6;
         }
 
-        // Helper function: Converts old string-based image DB entries to object format
-        function formatImg(item) {
-            return typeof item === 'string' ? { url: item, caption: "" } : item;
-        }
-
         async function loadBotData() {
             const botsSnap = await get(ref(db, 'bot_settings/bot_profiles'));
-            if(botsSnap.exists()) generatedBots = botsSnap.val();
+            if(botsSnap.exists()) {
+                const botData = botsSnap.val();
+                generatedBots = Array.isArray(botData) ? botData : Object.values(botData);
+            }
+            
+            // Map images to include Firebase Key and Category for deletion
+            const mapImg = (obj, cat) => obj ? Object.entries(obj).map(([k, v]) => ({ key: k, cat: cat, url: typeof v === 'string' ? v : v.url, caption: v.caption || "" })) : [];
             
             const imgsSnap = await get(ref(db, 'bot_settings/images'));
             if(imgsSnap.exists()) {
                 const imgData = imgsSnap.val();
-                categorizedImages.post_general = imgData.post_general ? Object.values(imgData.post_general).map(formatImg) : [];
-                categorizedImages.post_male = imgData.post_male ? Object.values(imgData.post_male).map(formatImg) : [];
-                categorizedImages.post_female = imgData.post_female ? Object.values(imgData.post_female).map(formatImg) : [];
-                categorizedImages.profile_male = imgData.profile_male ? Object.values(imgData.profile_male).map(formatImg) : [];
-                categorizedImages.profile_female = imgData.profile_female ? Object.values(imgData.profile_female).map(formatImg) : [];
+                categorizedImages.post_general = mapImg(imgData.post_general, 'post_general');
+                categorizedImages.post_male = mapImg(imgData.post_male, 'post_male');
+                categorizedImages.post_female = mapImg(imgData.post_female, 'post_female');
+                categorizedImages.profile_male = mapImg(imgData.profile_male, 'profile_male');
+                categorizedImages.profile_female = mapImg(imgData.profile_female, 'profile_female');
                 updateGalleryUI();
             }
 
+            // Map texts to include Firebase Key for deletion
+            const mapTxt = (obj, def) => obj ? Object.entries(obj).map(([k, v]) => ({ key: k, text: v.text })) : def;
+            
             const textsSnap = await get(ref(db, 'bot_settings/texts'));
             if(textsSnap.exists()) {
                 const tData = textsSnap.val();
-                botTexts.statusText = tData.statusText ? Object.values(tData.statusText).map(i=>i.text) : botTexts.statusText;
-                botTexts.photoCaption = tData.photoCaption ? Object.values(tData.photoCaption).map(i=>i.text) : botTexts.photoCaption;
-                botTexts.comments = tData.comments ? Object.values(tData.comments).map(i=>i.text) : botTexts.comments;
+                botTexts.statusText = mapTxt(tData.statusText, botTexts.statusText);
+                botTexts.photoCaption = mapTxt(tData.photoCaption, botTexts.photoCaption);
+                botTexts.comments = mapTxt(tData.comments, botTexts.comments);
             }
             renderTextList();
         }
 
-        document.getElementById('btn-add-text').onclick = async () => {
-            const cat = document.getElementById('text-category').value;
-            const text = document.getElementById('new-text-input').value.trim();
-            if(!text) return alert('[ERROR] NULL_STRING_DETECTED');
-            
-            const btn = document.getElementById('btn-add-text');
-            btn.innerText = "COMPILING...";
-            
-            await push(ref(db, `bot_settings/texts/${cat}`), {text});
-            document.getElementById('new-text-input').value = "";
-            btn.innerText = "Compile & Save";
-            loadBotData();
-        }
-
-        function renderTextList() {
-            const cat = document.getElementById('view-text-category').value;
-            const container = document.getElementById('text-list-container');
-            const texts = botTexts[cat] || [];
-            
-            if(texts.length > 0) {
-                container.innerHTML = texts.map(t => `<div class="bg-[#050f05] p-2 border border-green-900 text-[10px] text-green-400">>> ${t}</div>`).join('');
-            } else {
-                container.innerHTML = '<p class="text-center text-xs text-green-800 py-5">NO DATA FOUND</p>';
-            }
-        }
-        document.getElementById('view-text-category').onchange = renderTextList;
-
-        function updateGalleryUI(filter = 'all') {
-            const gallery = document.getElementById('image-gallery');
-            const count = document.getElementById('img-count');
-            
-            let displayImages = [];
-            if (filter === 'all') {
-                Object.values(categorizedImages).forEach(arr => displayImages.push(...arr));
-            } else {
-                displayImages = categorizedImages[filter] || [];
-            }
-
-            count.innerText = displayImages.length;
-            
-            if (displayImages.length > 0) {
-                gallery.innerHTML = displayImages.map(img => 
-                    `<a href="${img.url}" target="_blank" title="${img.caption ? 'Caption: ' + img.caption : 'No unique caption'}" class="block border border-green-800 hover:border-green-400 p-0.5 transition">
-                        <img src="${img.url}" class="w-full h-20 object-cover opacity-80 hover:opacity-100 filter grayscale hover:grayscale-0 cursor-pointer">
-                    </a>`
-                ).join('');
-            } else {
-                gallery.innerHTML = `<p class="col-span-3 text-center text-xs text-green-800 py-5">NO DATA FOUND</p>`;
-            }
-        }
-        document.getElementById('gallery-filter').onchange = (e) => updateGalleryUI(e.target.value);
-
-        // --- AI API FUNCTIONS ---
-        const fileToBase64 = (file) => new Promise((resolve, reject) => {
-            const reader = new FileReader();
-            reader.readAsDataURL(file);
-            reader.onload = () => resolve(reader.result.split(',')[1]);
-            reader.onerror = error => reject(error);
-        });
-
-        async function generateAICaption(base64Image, mimeType, apiKey) {
-            const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent?key=${apiKey}`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    contents: [{
-                        parts: [
-                            { text: "এই ছবিটির জন্য ফেসবুকের উপযোগী সুন্দর, ন্যাচারাল এবং একদম রিয়ালিস্টিক একটি বাংলা ক্যাপশন লেখো। কোনো হ্যাশট্যাগ (#) বা ইমোজি বেশি ব্যবহার করবে না। শুধু ক্যাপশনের টেক্সটটুকু দাও।" },
-                            { inline_data: { mime_type: mimeType, data: base64Image } }
-                        ]
-                    }]
-                })
-            });
-            const data = await response.json();
-            if (data.error) throw new Error(data.error.message);
-            return data.candidates[0].content.parts[0].text.trim();
-        }
-
-        document.getElementById('btn-upload-img').onclick = async () => {
-            const fileInput = document.getElementById('bot-image-upload');
-            const category = document.getElementById('upload-category').value;
-            const status = document.getElementById('upload-status');
-            
-            const aiKey = document.getElementById('gemini-api-key').value.trim();
-            const manualCaption = document.getElementById('upload-caption').value.trim();
-
-            if (!fileInput.files || fileInput.files.length === 0) return status.innerText = "[ERROR] FILE_NOT_FOUND";
-
-            const btn = document.getElementById('btn-upload-img');
+        // --- Bot Generator/Updater ---
+        document.getElementById('btn-setup-bots').onclick = async () => {
+            const btn = document.getElementById('btn-setup-bots');
+            btn.innerText = "PROCESSING NODES...";
             btn.disabled = true;
-            let finalCaption = manualCaption;
+            logAction("INITIALIZING NODE DEPLOYMENT PROTOCOL...", "text-yellow-400");
 
             try {
-                // If API Key is provided and no manual caption is written, Generate AI Caption
-                if (aiKey && !finalCaption) {
-                    status.innerText = "[SYS] Extracting AI Caption...";
-                    btn.innerText = 'AI PROCESSING...';
-                    const file = fileInput.files[0];
-                    const base64 = await fileToBase64(file);
-                    finalCaption = await generateAICaption(base64, file.type, aiKey);
-                    document.getElementById('upload-caption').value = finalCaption;
-                }
+                let currentBots = [...generatedBots];
 
-                btn.innerText = 'UPLOADING...';
-                status.innerText = "[SYS] Uploading to server...";
-
-                const formData = new FormData();
-                formData.append('file', fileInput.files[0]);
-                formData.append('upload_preset', 'Pathargata digital');
-
-                const res = await fetch(`https://api.cloudinary.com/v1_1/dl1auoanl/auto/upload`, { method: 'POST', body: formData });
-                const data = await res.json();
-                
-                if (data.secure_url) {
-                    await push(ref(db, `bot_settings/images/${category}`), {
-                        url: data.secure_url,
-                        caption: finalCaption || ""
+                while (currentBots.length < 200) {
+                    currentBots.push({
+                        uid: "BOT_" + Math.random().toString(36).substr(2, 9),
+                        gender: Math.random() > 0.5 ? "Male" : "Female"
                     });
-                    status.innerText = "[SUCCESS] PAYLOAD_INJECTED";
-                    fileInput.value = ""; 
-                    document.getElementById('upload-caption').value = "";
-                    loadBotData();
                 }
-            } catch (e) {
-                alert("AI Error: " + e.message); // এটি মোবাইলে পপ-আপ দেখাবে
-                status.innerText = "[ERROR] AI_PROCESS_FAILED";
+
+                const updatedBots = currentBots.map(bot => {
+                    const gender = bot.gender || (Math.random() > 0.5 ? "Male" : "Female");
+                    let fName, lName, picArray, fallbackPic;
+
+                    if (gender === "Male") {
+                        fName = maleNames[Math.floor(Math.random() * maleNames.length)];
+                        lName = maleLastNames[Math.floor(Math.random() * maleLastNames.length)];
+                        picArray = categorizedImages.profile_male;
+                        fallbackPic = "https://i.pravatar.cc/150?img=11";
+                    } else {
+                        fName = femaleNames[Math.floor(Math.random() * femaleNames.length)];
+                        lName = femaleLastNames[Math.floor(Math.random() * femaleLastNames.length)];
+                        picArray = categorizedImages.profile_female;
+                        fallbackPic = "https://i.pravatar.cc/150?img=5";
+                    }
+
+                    const fullName = `${fName} ${lName}`;
+                    let profilePic = fallbackPic;
+
+                    if (picArray && picArray.length > 0) {
+                        profilePic = picArray[Math.floor(Math.random() * picArray.length)].url;
+                    }
+
+                    const unions = Object.keys(locations);
+                    const randomUnion = unions[Math.floor(Math.random() * unions.length)];
+                    const randomVillage = locations[randomUnion][Math.floor(Math.random() * locations[randomUnion].length)];
+
+                    return { ...bot, name: fullName, gender: gender, profile_pic: profilePic, union: randomUnion, village: randomVillage };
+                });
+
+                await set(ref(db, 'bot_settings/bot_profiles'), updatedBots);
+                generatedBots = updatedBots; 
+                
+                logAction("ALL 200 NODES RE-CONFIGURED & DEPLOYED", "text-cyan-400 font-bold");
+                switchTab('control'); 
+            } catch (error) {
+                logAction("NODE DEPLOYMENT FAILED", "text-red-500 font-bold");
             } finally {
-                btn.innerText = 'Inject File';
+                btn.innerText = "DEPLOY 200 NODES";
                 btn.disabled = false;
             }
         };
 
-        async function autoPostLoop() {
-            if (!isRunning) return;
-            if (isSleepingTime()) {
-                postTimer = setTimeout(autoPostLoop, 60 * 60 * 1000);
-                return;
-            }
+        // --- Matrix Animation Effect ---
+        function runMatrixEffect() {
+            logAction("INITIATING MATRIX PROTOCOL...", "text-green-500 font-bold");
+            const canvas = document.getElementById('matrix-canvas');
+            canvas.classList.remove('hidden');
+            const ctx = canvas.getContext('2d');
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+            
+            const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789@#$%^&*';
+            const fontSize = 16;
+            const columns = canvas.width / fontSize;
+            const drops = Array.from({length: columns}).fill(1);
 
+            const interval = setInterval(() => {
+                ctx.fillStyle = 'rgba(0, 0, 0, 0.1)';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                ctx.fillStyle = '#0f0';
+                ctx.font = fontSize + 'px monospace';
+                for (let i = 0; i < drops.length; i++) {
+                    const text = letters.charAt(Math.floor(Math.random() * letters.length));
+                    ctx.fillText(text, i * fontSize, drops[i] * fontSize);
+                    if (drops[i] * fontSize > canvas.height && Math.random() > 0.975) drops[i] = 0;
+                    drops[i]++;
+                }
+            }, 50);
+
+            setTimeout(() => {
+                clearInterval(interval);
+                canvas.classList.add('hidden');
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                logAction("MATRIX PROTOCOL DISENGAGED.", "text-yellow-400");
+            }, 5000);
+        }
+
+        // --- CLI Interface Logic with History (Up/Down arrow) ---
+        document.getElementById('cli-input').addEventListener('keydown', async function(e) {
+            if(e.key === 'ArrowUp') {
+                e.preventDefault();
+                if(historyIndex < commandHistory.length - 1) {
+                    historyIndex++;
+                    this.value = commandHistory[commandHistory.length - 1 - historyIndex];
+                }
+            } else if(e.key === 'ArrowDown') {
+                e.preventDefault();
+                if(historyIndex > 0) {
+                    historyIndex--;
+                    this.value = commandHistory[commandHistory.length - 1 - historyIndex];
+                } else if(historyIndex === 0) {
+                    historyIndex = -1;
+                    this.value = '';
+                }
+            } else if (e.key === 'Enter') {
+                const rawCommand = this.value.trim();
+                const commandStr = rawCommand.toLowerCase();
+                if (!rawCommand) return;
+                
+                commandHistory.push(rawCommand);
+                historyIndex = -1;
+
+                logAction(`root@master-bot:~# ${rawCommand}`, "text-gray-500");
+                this.value = '';
+
+                // NEW COMMANDS PARSING
+                const parts = rawCommand.split(' ');
+
+                if (commandStr.startsWith('info ')) {
+                    const targetUid = parts[1];
+                    if (!targetUid) return logAction("ERROR: UID required. Usage: info <uid>", "text-red-500");
+                    
+                    logAction(`FETCHING DATA FOR UID: ${targetUid}...`, "text-yellow-400");
+                    let userProfile = generatedBots.find(b => b.uid === targetUid);
+                    let defaultPassword = "[ ENCRYPTED / NOT SET ]";
+                    let totalPosts = 0, friendCount = 0;
+                    let activityStatus = "Idle / No Recent Activity";
+                    let isMonetized = "NON-MONETIZED", isVerified = "NON-VERIFIED";
+                    
+                    try {
+                        const postsSnap = await get(ref(db, 'posts'));
+                        if (postsSnap.exists()) {
+                            let latestPostTime = 0;
+                            Object.values(postsSnap.val()).forEach(p => {
+                                if (p.uid === targetUid) {
+                                    totalPosts++;
+                                    if (p.timestamp > latestPostTime) latestPostTime = p.timestamp;
+                                }
+                            });
+                            if (latestPostTime > 0) {
+                                let diffMins = Math.floor((Date.now() - latestPostTime) / 60000);
+                                if(diffMins === 0) activityStatus = "Active Just Now";
+                                else if(diffMins < 60) activityStatus = `Last active ${diffMins} mins ago`;
+                                else activityStatus = `Last active ${Math.floor(diffMins/60)} hours ago`;
+                            }
+                        }
+                        
+                        const userExtraSnap = await get(ref(db, `users/${targetUid}`));
+                        if (userExtraSnap.exists()) {
+                            const uData = userExtraSnap.val();
+                            if(uData.friends) friendCount = Object.keys(uData.friends).length;
+                            if(uData.monetized) isMonetized = "MONETIZED [ACTIVE]";
+                            if(uData.verified) isVerified = "VERIFIED [BLUE TICK]";
+                        } else if (targetUid.startsWith("BOT_")) {
+                            let hash = 0; for (let i = 0; i < targetUid.length; i++) hash += targetUid.charCodeAt(i);
+                            friendCount = (hash % 300) + 120;
+                            if (hash % 5 === 0) isVerified = "VERIFIED [BLUE TICK]"; 
+                            if (hash % 7 === 0) isMonetized = "MONETIZED [ACTIVE]";
+                        }
+                    } catch (e) { logAction(`[DB ERROR] ${e.message}`, "text-red-500"); }
+
+                    const buildInfoHTML = (title, data, picUrl) => `
+                        <div class="border border-green-800 bg-[#020a02] p-2 mt-1 relative">
+                            <img src="${picUrl || 'https://i.pravatar.cc/150'}" class="absolute top-2 right-2 w-12 h-12 object-cover border border-green-500 rounded shadow-[0_0_8px_rgba(0,255,0,0.3)]">
+                            <p class="text-cyan-400 font-bold mb-1">${title}</p>
+                            <p class="text-green-400">Name: ${data.name}</p>
+                            <p class="text-green-400">UID: ${targetUid}</p>
+                            ${data.email ? `<p class="text-green-400">Email: ${data.email}</p>` : ''}
+                            ${data.role ? `<p class="text-green-400">Role: ${data.role}</p>` : ''}
+                            ${data.gender ? `<p class="text-green-400">Gender: ${data.gender}</p>` : ''}
+                            ${data.village ? `<p class="text-green-400">Loc: ${data.village}, ${data.union}</p>` : ''}
+                            <p class="text-purple-400 mt-1">> Status: ${isVerified} | ${isMonetized}</p>
+                            <p class="text-purple-400">> Posts: ${totalPosts} | Friends: ${friendCount}</p>
+                            <p class="text-yellow-300">> Activity: ${activityStatus}</p>
+                            <p class="text-red-400 mt-1">> Pass: ${data.password || defaultPassword}</p>
+                        </div>
+                    `;
+
+                    if (userProfile) {
+                        document.getElementById('log-container').insertAdjacentHTML('beforeend', buildInfoHTML("[ BOT NODE FOUND ]", userProfile, userProfile.profile_pic));
+                        const logWrapper = document.getElementById('log-wrapper');
+                        logWrapper.scrollTo({ top: logWrapper.scrollHeight, behavior: 'smooth' });
+                    } else {
+                        try {
+                            const userSnap = await get(ref(db, `users/${targetUid}`));
+                            if (userSnap.exists()) {
+                                const userData = userSnap.val();
+                                document.getElementById('log-container').insertAdjacentHTML('beforeend', buildInfoHTML("[ REAL USER FOUND ]", userData, userData.profile_pic));
+                                const logWrapper = document.getElementById('log-wrapper');
+                                logWrapper.scrollTo({ top: logWrapper.scrollHeight, behavior: 'smooth' });
+                            } else {
+                                logAction(`ERROR: No user/bot found with UID: ${targetUid}`, "text-red-500");
+                            }
+                        } catch (err) {
+                            logAction(`[DB FETCH ERROR] ${err.message}`, "text-red-500");
+                        }
+                    }
+                } 
+                else if (commandStr.startsWith('post_as ')) {
+                    if (parts.length < 4) return logAction("ERROR: Usage: post_as <uid> <image_url> <caption text...>", "text-red-500");
+                    
+                    const targetUid = parts[1];
+                    const imageUrl = parts[2];
+                    const caption = parts.slice(3).join(' '); 
+                    
+                    let authorName = "System Injector", authorPic = "https://i.pravatar.cc/150?img=3", union = "Unknown", village = "Unknown", isBot = false;
+                    let userProfile = generatedBots.find(b => b.uid === targetUid);
+
+                    if (userProfile) {
+                        authorName = userProfile.name; authorPic = userProfile.profile_pic; union = userProfile.union; village = userProfile.village; isBot = true;
+                    } else {
+                        try {
+                            const userSnap = await get(ref(db, `users/${targetUid}`));
+                            if (userSnap.exists()) { authorName = userSnap.val().name || authorName; authorPic = userSnap.val().profile_pic || authorPic; }
+                            else logAction("WARNING: UID not found. Injecting as Unknown Entity.", "text-yellow-500");
+                        } catch(e) { logAction(`[DB ERROR] ${e.message}`, "text-red-500"); }
+                    }
+
+                    logAction(`INJECTING POST FOR UID: ${targetUid}...`, "text-yellow-400");
+                    try {
+                        await push(ref(db, 'posts'), {
+                            uid: targetUid, author: authorName, authorPic: authorPic, content: caption, images: [imageUrl], bgColor: "", type: 'text', timestamp: Date.now(), privacy: 'public', union: union, village: village, authorRole: isBot ? 'user' : 'admin'
+                        });
+                        logAction(`[ SUCCESS ] POST INJECTED BY ${authorName}`, "text-cyan-400 font-bold");
+                    } catch (err) { logAction(`[INJECT ERROR] ${err.message}`, "text-red-500"); }
+                }
+                else if (commandStr.startsWith('delete_post ')) {
+                    const delId = parts[1];
+                    if(!delId) return logAction("Usage: delete_post <post_id>", "text-red-500");
+                    try {
+                        await remove(ref(db, 'posts/' + delId));
+                        logAction(`[SYS] POST ${delId} TERMINATED.`, "text-green-400 font-bold");
+                    } catch(e) { logAction(`[DEL ERROR] ${e.message}`, "text-red-500"); }
+                }
+                else if (commandStr.startsWith('ban_user ')) {
+                    const banUid = parts[1];
+                    if(!banUid) return logAction("Usage: ban_user <uid>", "text-red-500");
+                    try {
+                        await set(ref(db, 'users/' + banUid + '/banned'), true);
+                        logAction(`[SYS] USER ${banUid} BANNED.`, "text-red-500 font-bold");
+                    } catch(e) { logAction(`[BAN ERROR] ${e.message}`, "text-red-500"); }
+                }
+                else {
+                    switch(commandStr) {
+                        case 'start': document.getElementById('btn-start').click(); break;
+                        case 'stop': document.getElementById('btn-stop').click(); break;
+                        case 'deploy': document.getElementById('btn-setup-bots').click(); break;
+                        case 'clear': document.getElementById('log-container').innerHTML = ''; break;
+                        case 'status': logAction(`SYSTEM STATUS: ${isRunning ? 'RUNNING (ACTIVE)' : 'IDLE (INACTIVE)'}`, isRunning ? 'text-green-400' : 'text-yellow-400'); break;
+                        case 'stats':
+                            let imgCount = Object.values(categorizedImages).reduce((acc, arr) => acc + arr.length, 0);
+                            let txtCount = Object.values(botTexts).reduce((acc, arr) => acc + arr.length, 0);
+                            logAction(`[ DB STATS ] Bots: ${generatedBots.length} | Images: ${imgCount} | Texts: ${txtCount}`, 'text-cyan-400');
+                            break;
+                        case 'ping': logAction(`Pinging DB... Connection Stable. Latency: ${Math.floor(Math.random() * 40 + 20)}ms`, 'text-green-400'); break;
+                        case 'whoami': logAction(`Current User: ${auth.currentUser ? auth.currentUser.email || auth.currentUser.uid : 'UNKNOWN'} [ROLE: ADMIN]`, 'text-purple-400'); break;
+                        case 'force_post':
+                            if(generatedBots.length === 0) return logAction("ERROR: NO BOTS FOUND.", "text-red-500");
+                            logAction("Forcing manual post execution...", "text-yellow-400"); await executeSinglePost(); break;
+                        case 'force_engage':
+                            if(generatedBots.length === 0) return logAction("ERROR: NO BOTS FOUND.", "text-red-500");
+                            logAction("Forcing manual engage execution...", "text-yellow-400"); await executeSingleEngage(); break;
+                        case 'mute_bots':
+                            botsMuted = !botsMuted;
+                            logAction(`BOT COMMENTS: ${botsMuted ? 'MUTED [Only Likes Active]' : 'UNMUTED [Likes & Comments Active]'}`, 'text-yellow-400 font-bold');
+                            break;
+                        case 'export_logs':
+                            try {
+                                const logs = document.getElementById('log-container').innerText;
+                                const blob = new Blob([logs], { type: 'text/plain' });
+                                const a = document.createElement('a');
+                                a.href = URL.createObjectURL(blob);
+                                a.download = `terminal_logs_${Date.now()}.txt`;
+                                a.click();
+                                logAction('[SYS] LOGS EXPORTED SUCCESSFULLY.', 'text-green-400');
+                            } catch(e) { logAction(`[EXPORT ERROR] ${e.message}`, "text-red-500"); }
+                            break;
+                        case 'list bots':
+                            if(generatedBots.length === 0) logAction("No bots found.", "text-red-400");
+                            else {
+                                logAction("--- BOT LIST (Top 5) ---", "text-cyan-400");
+                                generatedBots.slice(0, 5).forEach(b => logAction(`- ${b.name} (${b.gender}) - ${b.village}`, "text-green-400"));
+                            }
+                            break;
+                        case 'check texts':
+                            logAction("--- TEXT SAMPLES ---", "text-cyan-400");
+                            if(botTexts.statusText.length) logAction(`Status: "${botTexts.statusText[Math.floor(Math.random()*botTexts.statusText.length)].text}"`, "text-green-400");
+                            if(botTexts.photoCaption.length) logAction(`Caption: "${botTexts.photoCaption[Math.floor(Math.random()*botTexts.photoCaption.length)].text}"`, "text-green-400");
+                            if(botTexts.comments.length) logAction(`Comment: "${botTexts.comments[Math.floor(Math.random()*botTexts.comments.length)].text}"`, "text-green-400");
+                            break;
+                        case 'check images':
+                            logAction("--- IMAGE COUNTS ---", "text-cyan-400");
+                            Object.keys(categorizedImages).forEach(cat => logAction(`${cat}: ${categorizedImages[cat].length} items`, "text-green-400"));
+                            break;
+                        case 'kill bots':
+                            logAction("EXECUTING ORDER 66... WIPING BOT DATABASE...", "text-red-500 font-bold");
+                            await remove(ref(db, 'bot_settings/bot_profiles')); generatedBots = [];
+                            logAction("ALL BOTS TERMINATED.", "text-red-500");
+                            break;
+                        case 'reboot':
+                            logAction("REBOOTING SYSTEM...", "text-yellow-400 font-bold animate-pulse");
+                            setTimeout(() => location.reload(), 2000);
+                            break;
+                        case 'matrix': runMatrixEffect(); break;
+                        case 'help':
+                            logAction("--- AVAILABLE COMMANDS ---", "text-yellow-400");
+                            logAction("  start        : Initializes the Master Protocol", "text-yellow-400");
+                            logAction("  stop         : Terminates the Master Protocol", "text-yellow-400");
+                            logAction("  deploy       : Auto-generates/updates 200 bot nodes", "text-yellow-400");
+                            logAction("  info <uid>   : View full details of a specific user/bot", "text-cyan-400");
+                            logAction("  post_as ...  : Inject post via UID (uid url caption)", "text-cyan-400");
+                            logAction("  delete_post <id> : Delete a post by Post ID", "text-red-400");
+                            logAction("  ban_user <uid>   : Ban a specific user UID", "text-red-400");
+                            logAction("  mute_bots    : Toggle bot comments on/off", "text-yellow-400");
+                            logAction("  export_logs  : Download terminal log history", "text-green-400");
+                            logAction("  force_post   : Immediately execute a random post", "text-yellow-400");
+                            logAction("  force_engage : Immediately engage with a post", "text-yellow-400");
+                            logAction("  stats        : View counts of bots, images, texts", "text-yellow-400");
+                            logAction("  ping / whoami / status / list bots / check texts", "text-yellow-400");
+                            logAction("  kill bots    : Wipe all bot data from DB", "text-red-500");
+                            logAction("  clear / matrix / reboot", "text-yellow-400");
+                            break;
+                        default: logAction(`bash: ${commandStr}: command not found. Type 'help'.`, "text-red-500");
+                    }
+                }
+            }
+        });
+
+        // --- Core Post Execution Logic ---
+        async function executeSinglePost() {
             const bot = generatedBots[Math.floor(Math.random() * generatedBots.length)];
             const postTypeRoll = Math.random();
             let postContent = "";
@@ -445,22 +670,17 @@
             else allowedImages.push(...categorizedImages.post_female);
 
             if (allowedImages.length > 0 && postTypeRoll < 0.6) {
-                // Select Image Object
                 const selectedImgObj = allowedImages[Math.floor(Math.random() * allowedImages.length)];
                 postImages = [selectedImgObj.url];
-                
-                // If the image has a specific AI/Manual caption, use it. Else use random photoCaption from old system.
-                if (selectedImgObj.caption && selectedImgObj.caption !== "") {
-                    postContent = selectedImgObj.caption;
-                } else {
+                if (selectedImgObj.caption && selectedImgObj.caption !== "") postContent = selectedImgObj.caption;
+                else {
                     if(Math.random() > 0.4 && botTexts.photoCaption.length > 0) {
-                        postContent = botTexts.photoCaption[Math.floor(Math.random() * botTexts.photoCaption.length)];
+                        postContent = botTexts.photoCaption[Math.floor(Math.random() * botTexts.photoCaption.length)].text;
                     }
                 }
-                
                 logAction(`IMAGE_POST_EXECUTED // ID: ${bot.name}`, "text-cyan-400");
             } else {
-                postContent = botTexts.statusText[Math.floor(Math.random() * botTexts.statusText.length)];
+                if(botTexts.statusText.length > 0) postContent = botTexts.statusText[Math.floor(Math.random() * botTexts.statusText.length)].text;
                 if (postContent && postContent.length < 100 && Math.random() < 0.3) {
                     bgColor = bgColors[Math.floor(Math.random() * bgColors.length)];
                 }
@@ -474,19 +694,26 @@
                     bgColor: bgColor, type: 'text', timestamp: Date.now(), privacy: 'public', 
                     union: bot.union, village: bot.village, authorRole: 'user'
                 });
-            } catch (e) {}
-
-            const nextPostIn = Math.floor(Math.random() * (10800000 - 3600000)) + 3600000;
-            postTimer = setTimeout(autoPostLoop, nextPostIn);
+            } catch (e) { logAction(`[POST_ERROR] ${e.message}`, "text-red-500"); }
         }
 
-        async function autoEngageLoop() {
-            if (!isRunning) return;
-            if (isSleepingTime()) {
-                engageTimer = setTimeout(autoEngageLoop, 60 * 60 * 1000);
-                return;
-            }
+        // --- AI Auto Comment Generator ---
+        async function generateAIComment(postContent, apiKey) {
+            if(!postContent) return null;
+            const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent?key=${apiKey}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    contents: [{ parts: [{ text: `এই ফেসবুক পোস্টের জন্য ১ লাইনের একটি স্বাভাবিক, ন্যাচারাল ও রিয়ালিস্টিক বাংলা কমেন্ট তৈরি করো। কোনো হ্যাশট্যাগ ব্যবহার করবে না। পোস্ট: "${postContent}"` }] }]
+                })
+            });
+            const data = await response.json();
+            if (data.error) throw new Error(data.error.message);
+            return data.candidates[0].content.parts[0].text.trim();
+        }
 
+        // --- Core Engage Execution Logic ---
+        async function executeSingleEngage() {
             try {
                 const snap = await get(ref(db, 'posts'));
                 if (snap.exists()) {
@@ -499,30 +726,207 @@
                     do { bot = generatedBots[Math.floor(Math.random() * generatedBots.length)]; } 
                     while (bot.uid === targetPost.uid);
 
-                    if (Math.random() > 0.4) { 
+                    // Skip Duplicate Like Checking
+                    if (Math.random() > 0.4 || botsMuted) { 
+                        if (targetPost.likes && targetPost.likes[bot.uid]) {
+                            logAction(`[SKIP] Node already liked target // ${randomPostId.substring(0,6)}...`, "text-gray-600");
+                            return;
+                        }
                         await set(ref(db, `posts/${randomPostId}/likes/${bot.uid}`), true);
                         logAction(`LIKE_INJECTED // TARGET: ${randomPostId.substring(0,6)}... BY: ${bot.name}`, "text-green-400");
                     } else { 
-                        const comment = botTexts.comments[Math.floor(Math.random() * botTexts.comments.length)];
+                        let commentText = botTexts.comments[Math.floor(Math.random() * botTexts.comments.length)].text;
+                        const aiKey = document.getElementById('gemini-api-key').value.trim();
+                        
+                        // Smart AI Commenting
+                        if(aiKey && targetPost.content) {
+                            try {
+                                const aiResp = await generateAIComment(targetPost.content, aiKey);
+                                if(aiResp) commentText = aiResp;
+                            } catch(e) { logAction("[AI_COMMENT_WARN] Falling back to default script.", "text-yellow-500"); }
+                        }
+
                         await push(ref(db, `posts/${randomPostId}/comments`), {
                             author: bot.name, authorUid: bot.uid, authorPic: bot.profile_pic,
-                            text: comment, time: Date.now()
+                            text: commentText, time: Date.now()
                         });
                         logAction(`COMMENT_DEPLOYED // TARGET: ${randomPostId.substring(0,6)}...`, "text-purple-400");
                     }
                 }
-            } catch (e) {}
+            } catch (e) { logAction(`[ENGAGE_ERROR] ${e.message}`, "text-red-500"); }
+        }
 
+        // Timer loops
+        async function autoPostLoop() {
+            if (!isRunning) return;
+            if (isSleepingTime()) { postTimer = setTimeout(autoPostLoop, 60 * 60 * 1000); return; }
+            await executeSinglePost();
+            const nextPostIn = Math.floor(Math.random() * (10800000 - 3600000)) + 3600000;
+            postTimer = setTimeout(autoPostLoop, nextPostIn);
+        }
+
+        async function autoEngageLoop() {
+            if (!isRunning) return;
+            if (isSleepingTime()) { engageTimer = setTimeout(autoEngageLoop, 60 * 60 * 1000); return; }
+            await executeSingleEngage();
             const nextEngageIn = Math.floor(Math.random() * (2100000 - 900000)) + 900000;
             engageTimer = setTimeout(autoEngageLoop, nextEngageIn);
         }
+
+        // --- UI & API Functions (CRUD Deletion Support added) ---
+        
+        // Global delete functions for inline onclick handlers
+        window.deleteText = async (cat, key) => {
+            if(confirm("Confirm deletion of script node?")) {
+                try {
+                    await remove(ref(db, `bot_settings/texts/${cat}/${key}`));
+                    logAction(`[SYS] Script removed from ${cat}`, "text-yellow-400");
+                    loadBotData();
+                } catch(e) { logAction(`[DEL ERROR] ${e.message}`, "text-red-500"); }
+            }
+        }
+
+        window.deleteImage = async (cat, key) => {
+            if(confirm("Confirm deletion of payload image?")) {
+                try {
+                    await remove(ref(db, `bot_settings/images/${cat}/${key}`));
+                    logAction(`[SYS] Media removed from ${cat}`, "text-yellow-400");
+                    loadBotData();
+                } catch(e) { logAction(`[DEL ERROR] ${e.message}`, "text-red-500"); }
+            }
+        }
+
+        document.getElementById('btn-add-text').onclick = async () => {
+            const cat = document.getElementById('text-category').value;
+            const text = document.getElementById('new-text-input').value.trim();
+            if(!text) return alert('[ERROR] NULL_STRING_DETECTED');
+            const btn = document.getElementById('btn-add-text');
+            btn.innerText = "COMPILING...";
+            try {
+                await push(ref(db, `bot_settings/texts/${cat}`), {text});
+                document.getElementById('new-text-input').value = "";
+                loadBotData();
+            } catch(e) { logAction(`[DB ERROR] ${e.message}`, "text-red-500"); }
+            btn.innerText = "Compile & Save";
+        }
+
+        function renderTextList() {
+            const cat = document.getElementById('view-text-category').value;
+            const container = document.getElementById('text-list-container');
+            const texts = botTexts[cat] || [];
+            if(texts.length > 0 && texts[0].key !== 'def') {
+                container.innerHTML = texts.map(t => `
+                    <div class="flex justify-between items-center bg-[#050f05] p-2 border border-green-900 text-[10px] text-green-400 mb-1">
+                        <span class="truncate pr-2">>> ${t.text}</span>
+                        <button onclick="deleteText('${cat}', '${t.key}')" class="text-red-800 hover:text-red-500 transition px-2"><i class="fa-solid fa-xmark"></i></button>
+                    </div>
+                `).join('');
+            } else if (texts.length > 0 && texts[0].key === 'def') {
+                container.innerHTML = `<p class="text-center text-xs text-green-800 py-5">ONLY DEFAULT SYSTEM SCRIPTS FOUND</p>`;
+            } else {
+                container.innerHTML = '<p class="text-center text-xs text-green-800 py-5">NO DATA FOUND</p>';
+            }
+        }
+        document.getElementById('view-text-category').onchange = renderTextList;
+
+        function updateGalleryUI(filter = 'all') {
+            const gallery = document.getElementById('image-gallery');
+            const count = document.getElementById('img-count');
+            let displayImages = [];
+            if (filter === 'all') Object.values(categorizedImages).forEach(arr => displayImages.push(...arr));
+            else displayImages = categorizedImages[filter] || [];
+            count.innerText = displayImages.length;
+            
+            if (displayImages.length > 0) {
+                gallery.innerHTML = displayImages.map(img => `
+                    <div class="relative group border border-green-800 hover:border-green-400 p-0.5 transition h-20">
+                        <a href="${img.url}" target="_blank" title="${img.caption ? 'Caption: ' + img.caption : 'No unique caption'}">
+                            <img src="${img.url}" class="w-full h-full object-cover opacity-80 group-hover:opacity-100 filter grayscale group-hover:grayscale-0 cursor-pointer">
+                        </a>
+                        <button onclick="deleteImage('${img.cat}', '${img.key}')" class="absolute top-1 right-1 bg-black text-red-500 rounded flex items-center justify-center opacity-0 group-hover:opacity-100 border border-red-500 w-5 h-5 transition hover:bg-red-900"><i class="fa-solid fa-trash text-[10px]"></i></button>
+                    </div>
+                `).join('');
+            } else {
+                gallery.innerHTML = `<p class="col-span-3 text-center text-xs text-green-800 py-5">NO DATA FOUND</p>`;
+            }
+        }
+        document.getElementById('gallery-filter').onchange = (e) => updateGalleryUI(e.target.value);
+
+        const fileToBase64 = (file) => new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.readAsDataURL(file);
+            reader.onload = () => resolve(reader.result.split(',')[1]);
+            reader.onerror = error => reject(error);
+        });
+
+        document.getElementById('btn-upload-img').onclick = async () => {
+            const fileInput = document.getElementById('bot-image-upload');
+            const category = document.getElementById('upload-category').value;
+            const status = document.getElementById('upload-status');
+            const aiKey = document.getElementById('gemini-api-key').value.trim();
+            const manualCaption = document.getElementById('upload-caption').value.trim();
+
+            if (!fileInput.files || fileInput.files.length === 0) return status.innerText = "[ERROR] FILE_NOT_FOUND";
+
+            const btn = document.getElementById('btn-upload-img');
+            btn.disabled = true;
+            let finalCaption = manualCaption;
+
+            try {
+                if (aiKey && !finalCaption) {
+                    status.innerText = "[SYS] Extracting AI Caption...";
+                    logAction("Connecting to Gemini API for caption...", "text-yellow-400");
+                    btn.innerText = 'AI PROCESSING...';
+                    const file = fileInput.files[0];
+                    const base64 = await fileToBase64(file);
+                    
+                    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent?key=${aiKey}`, {
+                        method: 'POST', headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ contents: [{ parts: [ { text: "এই ছবিটির জন্য ফেসবুকের উপযোগী সুন্দর, ন্যাচারাল এবং একদম রিয়ালিস্টিক একটি বাংলা ক্যাপশন লেখো। কোনো হ্যাশট্যাগ (#) বা ইমোজি বেশি ব্যবহার করবে ঘন ঘন। শুধু ক্যাপশনের টেক্সটটুকু দাও।" }, { inline_data: { mime_type: file.type, data: base64 } } ] }] })
+                    });
+                    const data = await response.json();
+                    if(data.error) throw new Error(data.error.message);
+                    finalCaption = data.candidates[0].content.parts[0].text.trim();
+                    document.getElementById('upload-caption').value = finalCaption;
+                }
+
+                btn.innerText = 'UPLOADING...';
+                status.innerText = "[SYS] Uploading to Cloudinary...";
+                logAction("Uploading payload to Cloudinary server...", "text-yellow-400");
+
+                const formData = new FormData();
+                formData.append('file', fileInput.files[0]);
+                formData.append('upload_preset', 'Pathargata digital');
+
+                const res = await fetch(`https://api.cloudinary.com/v1_1/dl1auoanl/auto/upload`, { method: 'POST', body: formData });
+                const data = await res.json();
+                
+                if (data.secure_url) {
+                    logAction("Cloudinary upload successful. Injecting DB entry...", "text-green-400");
+                    await push(ref(db, `bot_settings/images/${category}`), { url: data.secure_url, caption: finalCaption || "" });
+                    status.innerText = "[SUCCESS] PAYLOAD_INJECTED";
+                    fileInput.value = ""; 
+                    document.getElementById('upload-caption').value = "";
+                    loadBotData();
+                } else { throw new Error("Cloudinary URL missing."); }
+            } catch (e) {
+                logAction(`[UPLOAD_ERROR] ${e.message}`, "text-red-500");
+                status.innerText = "[ERROR] PROCESS_FAILED";
+            } finally {
+                btn.innerText = 'Inject File';
+                btn.disabled = false;
+            }
+        };
 
         const btnStart = document.getElementById('btn-start');
         const btnStop = document.getElementById('btn-stop');
 
         btnStart.onclick = () => {
-            if (generatedBots.length === 0) return alert("[WARNING] REQUIRE_NODES: Generate bot accounts first.");
-            if (botTexts.statusText.length === 0) return alert("[WARNING] REQUIRE_SCRIPT: Add status texts first.");
+            if (generatedBots.length === 0) {
+                logAction("WARNING: REQUIRE_NODES. Type 'deploy' first.", "text-red-500 font-bold");
+                return alert("[WARNING] Generate bot accounts first.");
+            }
+            if (botTexts.statusText.length === 0 || botTexts.statusText[0].key === 'def') return alert("[WARNING] REQUIRE_SCRIPT: Add custom status texts first.");
 
             isRunning = true;
             document.getElementById('status-text').innerText = "[ STATUS: PROTOCOL_RUNNING... ]";
