@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Master Bot Controller - Secure</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body class="bg-gray-100 p-4 font-sans pb-20">
+
+    <!-- Security Loading Screen -->
+    <div id="loading-screen" class="text-center mt-20">
+        <i class="fa-solid fa-shield-halved text-5xl text-blue-500 mb-3 animate-pulse"></i>
+        <h2 class="text-xl font-bold text-gray-700">সিকিউরিটি চেক চলছে...</h2>
+        <p class="text-sm text-gray-500">দয়া করে অপেক্ষা করুন</p>
+    </div>
+
+    <!-- Main Content (Hidden by default, shown only to admins) -->
+    <div id="main-content" class="hidden max-w-md mx-auto bg-white rounded-xl shadow-lg p-5 mt-2">
+        <div class="text-center mb-5 border-b pb-4">
+            <i class="fa-solid fa-robot text-4xl text-blue-600 mb-2 animate-bounce"></i>
+            <h1 class="text-xl font-bold text-gray-800">মাস্টার বট কন্ট্রোলার</h1>
+            <p id="status-text" class="text-xs font-bold text-red-500 mt-1">স্ট্যাটাস: চেক করা হচ্ছে...</p>
+        </div>
+
+        <!-- Section 1: Bot Initialization -->
+        <div class="mb-5 bg-blue-50 p-3 rounded-lg border border-blue-100">
+            <h3 class="text-sm font-bold text-blue-800 mb-2"><i class="fa-solid fa-users mr-1"></i> ২০০ বট সেটআপ</h3>
+            <p class="text-[10px] text-gray-600 mb-2">প্রথমবার এটি ক্লিক করে ২০০টি একাউন্ট তৈরি করে নিন।</p>
+            <button id="btn-setup-bots" class="w-full bg-blue-600 text-white font-bold py-2 rounded shadow hover:bg-blue-700 text-sm transition">
+                ২০০ বট তৈরি করুন
+            </button>
+        </div>
+
+        <!-- Section 2: Image Uploader for Bots -->
+        <div class="mb-5 bg-orange-50 p-3 rounded-lg border border-orange-100">
+            <h3 class="text-sm font-bold text-orange-800 mb-2"><i class="fa-solid fa-cloud-arrow-up mr-1"></i> বটের জন্য ছবি আপলোড</h3>
+            <p class="text-[10px] text-gray-600 mb-2">এখান থেকে ছবি দিলে বট সেগুলো তার পোস্টে ব্যবহার করবে।</p>
+            <input type="file" id="bot-image-upload" accept="image/*" class="w-full text-xs mb-2 file:mr-4 file:py-1 file:px-3 file:rounded file:border-0 file:text-xs file:bg-orange-200 file:text-orange-800">
+            <button id="btn-upload-img" class="w-full bg-orange-500 text-white font-bold py-2 rounded shadow hover:bg-orange-600 text-sm transition">
+                আপলোড করুন
+            </button>
+            <p id="upload-status" class="text-[10px] font-bold text-center mt-1 text-green-600"></p>
+        </div>
+
+        <!-- Section 3: Start/Stop Controls -->
+        <div class="flex gap-3 mb-5">
+            <button id="btn-start" class="flex-1 bg-green-600 text-white font-bold py-3 rounded-lg shadow hover:bg-green-700 active:scale-95 transition flex items-center justify-center">
+                <i class="fa-solid fa-play mr-2"></i> চালু করুন
+            </button>
+            <button id="btn-stop" disabled class="flex-1 bg-gray-400 text-white font-bold py-3 rounded-lg shadow cursor-not-allowed transition flex items-center justify-center">
+                <i class="fa-solid fa-stop mr-2"></i> বন্ধ করুন
+            </button>
+        </div>
+
+        <!-- Section 4: Logs -->
+        <div class="bg-gray-900 rounded-lg p-3 h-64 overflow-y-auto">
+            <p class="text-xs text-green-400 mb-2 border-b border-gray-700 pb-1">বট অ্যাক্টিভিটি লগ:</p>
+            <div id="log-container" class="text-[10px] text-gray-300 space-y-2 font-mono flex flex-col-reverse">
+                <!-- Logs here -->
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getDatabase, ref, push, set, get } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+        import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyBfI-THOXOvhyL7LumZVKixtTVwF94CjsI",
+            databaseURL: "https://pathargata-digital-comnity-ltd-default-rtdb.firebaseio.com",
+            projectId: "pathargata-digital-comnity-ltd"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
+        const auth = getAuth(app);
+
+        // --- Security Check: Admin Verification ---
+        onAuthStateChanged(auth, async (user) => {
+            if (user) {
+                const snap = await get(ref(db, `users/${user.uid}/role`));
+                if (snap.val() === 'admin') {
+                    // যদি অ্যাডমিন হয়, তবে লোডিং সরিয়ে মেইন প্যানেল দেখাবে
+                    document.getElementById('loading-screen').style.display = 'none';
+                    document.getElementById('main-content').classList.remove('hidden');
+                    document.getElementById('status-text').innerText = "স্ট্যাটাস: অ্যাডমিন ভেরিফাইড (বট বন্ধ আছে)";
+                    document.getElementById('status-text').className = "text-xs font-bold text-green-600 mt-1";
+                    
+                    // অ্যাডমিন ভেরিফাই হওয়ার পরেই বটের ডাটা লোড হবে
+                    loadBotData();
+                } else {
+                    // অ্যাডমিন না হলে
+                    document.body.innerHTML = `
+                        <div class="flex flex-col items-center justify-center h-screen bg-gray-100">
+                            <i class="fa-solid fa-triangle-exclamation text-6xl text-red-500 mb-4 animate-bounce"></i>
+                            <h1 class="text-2xl font-bold text-red-600">Access Denied!</h1>
+                            <p class="text-gray-600 mt-2">দুঃখিত, আপনি অ্যাডমিন নন। আপনার এই পেজে প্রবেশের অনুমতি নেই।</p>
+                        </div>`;
+                }
+            } else {
+                // লগইন করা না থাকলে
+                document.body.innerHTML = `
+                    <div class="flex flex-col items-center justify-center h-screen bg-gray-100">
+                        <i class="fa-solid fa-lock text-6xl text-gray-400 mb-4"></i>
+                        <h1 class="text-2xl font-bold text-gray-800">Authentication Required</h1>
+                        <p class="text-gray-600 mt-2">দয়া করে মূল অ্যাপ থেকে আগে অ্যাডমিন আইডি লগইন করুন।</p>
+                    </div>`;
+            }
+        });
+
+        // --- পাথরঘাটার ইউনিয়ন ও গ্রামের তালিকা ---
+        const locations = {
+            "Patharghata Union Sadar": ["পাথরঘাটা", "গহরপুর", "নিজলাঠিমারা", "হাতেমপুর", "বড়ইতলা", "বড় টেংরা", "কোড়ালিয়া", "রুহিতা", "পদ্মা", "হাড়িটানা", "বাদুরতলা", "চরলাঠিমারা"],
+            "Char Duani Union": ["চরদুয়ানী", "দক্ষিণ চরদুয়ানী", "মঠের খাল", "হোগলাপাশা", "গাববাড়িয়া"],
+            "Kakchira Union": ["কাকচিরা", "জালিয়াঘাটা", "রূপধন", "বাইলাচারা"],
+            "Kalmegha Union": ["কালমেঘা", "ঘুটাবাছা", "কুপদোন", "পশ্চিম কালমেঘা"],
+            "Kathaltoli Union": ["কাঁঠালতলী", "তালতলী", "সাপলেজা", "করুণা"],
+            "Nachnapara Union": ["নাচনাপাড়া", "জ্ঞানপাড়া", "বাঁশতলা", "মানিকখালী"],
+            "Raihanpur Union": ["রায়হানপুর", "শতকর", "লেমুয়া", "হরিণঘাটা"]
+        };
+
+        const firstNames = ["সাকিব", "তামিম", "রহিম", "করিম", "সুমাইয়া", "ফাতেমা", "তানিয়া", "আরিফ", "রিয়াদ", "মেহেদী", "হাবিব", "রফিক", "শফিক", "মুসফিক", "নাঈম", "আকাশ", "সাগর", "নদী", "বৃষ্টি", "মেঘলা", "সাদিয়া", "মারিয়া", "জাহিদ", "তারেক", "ইমরান", "রাসেল", "রুবেল", "রনি", "জনি", "রাজু", "সাব্বির", "হাসান", "হোসেন", "আব্দুল্লাহ", "আয়েশা", "খাদিজা", "মাহি", "সিয়াম", "রাফি", "শারমিন"];
+        const lastNames = ["ইসলাম", "রহমান", "হোসেন", "হাসান", "মিয়া", "হাওলাদার", "কাজী", "সিকদার", "খান", "চৌধুরী", "আহমেদ", "আক্তার", "বেগম", "খাতুন", "শেখ", "মোল্লা"];
+        const professions = ["কৃষক", "ব্যবসায়ী", "ছাত্র", "ছাত্রী", "শিক্ষক", "প্রবাসী", "চাকরিজীবী", "গৃহিনী", "দোকানদার", "ফ্রিল্যান্সার"];
+
+        const postTexts = [
+            "পাথরঘাটায় আজকের আবহাওয়া কেমন? এখানে খুব রোদ।", "সবাই কেমন আছেন? ডিজিটাল পাথরঘাটা অ্যাপটি বেশ ভালো কাজ করছে।", "কালকে কি কাকচিরা বাজারে হাট বসবে? কেউ জানলে কমেন্ট করুন।", "উপজেলা স্বাস্থ্য কমপ্লেক্সে কি বাচ্চাদের ডাক্তার বসেন প্রতিদিন?", "আজকে তো মনে হচ্ছে বৃষ্টি নামবে। সাবধানে থাকবেন সবাই।", "বিদ্যুৎ তো অনেকক্ষণ ধরে নেই, আপনাদের এলাকায় কি অবস্থা?", "মাঠে ফসলের অবস্থা আলহামদুলিল্লাহ অনেক ভালো।"
+        ];
+        
+        const photoCaptions = [
+            "গ্রামের প্রাকৃতিক দৃশ্য সবসময় মন ভালো করে দেয়। ❤️", "আজকের বাজারের অবস্থা। দাম বেশ চড়া!", "আমাদের এলাকার সুন্দর একটি মুহূর্ত।", "ঘুরতে গিয়েছিলাম, জায়গাটা আসলেই অসাধারণ।", "অপূর্ব দৃশ্য! সুবহানাল্লাহ।"
+        ];
+
+        const commentTexts = [
+            "দারুণ ছবি! সুন্দর লাগছে।", "একমত পোষণ করছি।", "হ্যাঁ ভাই, একদম ঠিক।", "ধন্যবাদ শেয়ার করার জন্য।", "আমিও জায়গাটাতে গিয়েছিলাম।", "মাশাআল্লাহ খুব সুন্দর!", "তথ্যটি দেওয়ার জন্য ধন্যবাদ ভাই।"
+        ];
+
+        let isRunning = false;
+        let postTimer, engageTimer;
+        let generatedBots = [];
+        let uploadedBotImages = [];
+
+        function logAction(msg, color = "text-gray-300") {
+            const time = new Date().toLocaleTimeString();
+            const logDiv = document.getElementById('log-container');
+            logDiv.insertAdjacentHTML('afterbegin', `<p class="${color}">[${time}] ${msg}</p>`);
+        }
+
+        function isSleepingTime() {
+            const hour = new Date().getHours();
+            return hour >= 1 && hour < 6;
+        }
+
+        // --- ২০০ বট তৈরি করার ফাংশন ---
+        document.getElementById('btn-setup-bots').onclick = async () => {
+            const btn = document.getElementById('btn-setup-bots');
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> তৈরি হচ্ছে...';
+            btn.disabled = true;
+
+            const unions = Object.keys(locations);
+            let bots = [];
+
+            for(let i=1; i<=200; i++) {
+                const fname = firstNames[Math.floor(Math.random() * firstNames.length)];
+                const lname = lastNames[Math.floor(Math.random() * lastNames.length)];
+                const union = unions[Math.floor(Math.random() * unions.length)];
+                const villages = locations[union];
+                const village = villages[Math.floor(Math.random() * villages.length)];
+                const profession = professions[Math.floor(Math.random() * professions.length)];
+                
+                const avatarNum = Math.floor(Math.random() * 70) + 1;
+                const profilePic = `https://i.pravatar.cc/150?img=${avatarNum}`;
+
+                const botData = {
+                    uid: `auto_bot_${i}`,
+                    name: `${fname} ${lname}`,
+                    profile_pic: profilePic,
+                    union: union,
+                    village: village,
+                    profession: profession,
+                    role: 'user',
+                    isVerified: false,
+                    joinDate: new Date().toLocaleDateString()
+                };
+                bots.push(botData);
+            }
+
+            try {
+                for (const bot of bots) {
+                    await set(ref(db, 'users/' + bot.uid), bot);
+                }
+                await set(ref(db, 'bot_settings/bot_profiles'), bots);
+                
+                logAction("✅ সফলভাবে ২০০টি বট একাউন্ট তৈরি করা হয়েছে!", "text-green-400");
+                btn.innerHTML = 'বট তৈরি সম্পন্ন';
+                generatedBots = bots;
+            } catch(e) {
+                logAction("Error: " + e.message, "text-red-400");
+                btn.innerHTML = 'আবার চেষ্টা করুন';
+                btn.disabled = false;
+            }
+        };
+
+        // --- ছবি আপলোড ফাংশন (Cloudinary) ---
+        document.getElementById('btn-upload-img').onclick = async () => {
+            const fileInput = document.getElementById('bot-image-upload');
+            const status = document.getElementById('upload-status');
+            
+            if (!fileInput.files || fileInput.files.length === 0) {
+                status.innerText = "আগে একটি ছবি সিলেক্ট করুন!";
+                status.className = "text-[10px] font-bold text-center mt-1 text-red-600";
+                return;
+            }
+
+            const btn = document.getElementById('btn-upload-img');
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> আপলোড হচ্ছে...';
+            btn.disabled = true;
+            status.innerText = "";
+
+            const formData = new FormData();
+            formData.append('file', fileInput.files[0]);
+            formData.append('upload_preset', 'Pathargata digital');
+
+            try {
+                const res = await fetch(`https://api.cloudinary.com/v1_1/dl1auoanl/auto/upload`, {
+                    method: 'POST',
+                    body: formData
+                });
+                const data = await res.json();
+                
+                if (data.secure_url) {
+                    await push(ref(db, 'bot_settings/uploaded_images'), data.secure_url);
+                    status.innerText = "ছবি সফলভাবে সেভ হয়েছে!";
+                    status.className = "text-[10px] font-bold text-center mt-1 text-green-600";
+                    fileInput.value = ""; 
+                    
+                    uploadedBotImages.push(data.secure_url);
+                    logAction("🖼️ বটের জন্য নতুন ছবি আপলোড করা হয়েছে।", "text-orange-400");
+                }
+            } catch (e) {
+                status.innerText = "আপলোড ফেইল করেছে!";
+                status.className = "text-[10px] font-bold text-center mt-1 text-red-600";
+            } finally {
+                btn.innerHTML = 'আপলোড করুন';
+                btn.disabled = false;
+            }
+        };
+
+        // --- কোর বট লজিক ---
+        async function loadBotData() {
+            const botsSnap = await get(ref(db, 'bot_settings/bot_profiles'));
+            if(botsSnap.exists()) generatedBots = botsSnap.val();
+            
+            const imgsSnap = await get(ref(db, 'bot_settings/uploaded_images'));
+            if(imgsSnap.exists()) uploadedBotImages = Object.values(imgsSnap.val());
+        }
+
+        async function autoPostLoop() {
+            if (!isRunning) return;
+            if (isSleepingTime()) {
+                logAction("রাত গভীর হয়েছে। বট ঘুমাচ্ছে... 😴", "text-yellow-400");
+                postTimer = setTimeout(autoPostLoop, 60 * 60 * 1000);
+                return;
+            }
+
+            if(generatedBots.length === 0) {
+                logAction("বট লিস্ট খালি! আগে বট সেটআপ করুন।", "text-red-400");
+                return;
+            }
+
+            const bot = generatedBots[Math.floor(Math.random() * generatedBots.length)];
+            const postTypeRoll = Math.random();
+            let postContent = "";
+            let postImages = [];
+            let logMsg = "";
+
+            if (uploadedBotImages.length > 0 && postTypeRoll < 0.6) {
+                const randomImg = uploadedBotImages[Math.floor(Math.random() * uploadedBotImages.length)];
+                postImages = [randomImg];
+                if(Math.random() > 0.5) postContent = photoCaptions[Math.floor(Math.random() * photoCaptions.length)];
+                logMsg = `📸 ${bot.name} আপনার আপলোড করা ছবিসহ পোস্ট করেছে।`;
+            } else {
+                postContent = postTexts[Math.floor(Math.random() * postTexts.length)];
+                logMsg = `📝 ${bot.name} স্ট্যাটাস দিয়েছে (টেক্সট)।`;
+            }
+
+            try {
+                await push(ref(db, 'posts'), {
+                    uid: bot.uid, author: bot.name, authorPic: bot.profile_pic,
+                    content: postContent, images: postImages.length > 0 ? postImages : null,
+                    type: 'text', timestamp: Date.now(), privacy: 'public', 
+                    union: bot.union, village: bot.village, authorRole: 'user'
+                });
+                logAction(logMsg, "text-blue-400");
+            } catch (e) { logAction("Error: " + e.message, "text-red-400"); }
+
+            const nextPostIn = Math.floor(Math.random() * (10800000 - 3600000)) + 3600000;
+            postTimer = setTimeout(autoPostLoop, nextPostIn);
+        }
+
+        async function autoEngageLoop() {
+            if (!isRunning) return;
+            if (isSleepingTime()) {
+                engageTimer = setTimeout(autoEngageLoop, 60 * 60 * 1000);
+                return;
+            }
+
+            if(generatedBots.length === 0) return;
+
+            try {
+                const snap = await get(ref(db, 'posts'));
+                if (snap.exists()) {
+                    const postsData = snap.val();
+                    const postIds = Object.keys(postsData);
+                    const randomPostId = postIds[Math.floor(Math.random() * postIds.length)];
+                    const targetPost = postsData[randomPostId];
+
+                    let bot;
+                    do { bot = generatedBots[Math.floor(Math.random() * generatedBots.length)]; } 
+                    while (bot.uid === targetPost.uid);
+
+                    if (Math.random() > 0.4) { 
+                        await set(ref(db, `posts/${randomPostId}/likes/${bot.uid}`), true);
+                        logAction(`❤️ ${bot.name} একটি পোস্টে লাইক দিয়েছে।`, "text-green-400");
+                    } else { 
+                        const comment = commentTexts[Math.floor(Math.random() * commentTexts.length)];
+                        await push(ref(db, `posts/${randomPostId}/comments`), {
+                            author: bot.name, authorUid: bot.uid, authorPic: bot.profile_pic,
+                            text: comment, time: Date.now()
+                        });
+                        logAction(`💬 ${bot.name} কমেন্ট করেছে: "${comment}"`, "text-purple-400");
+                    }
+                }
+            } catch (e) { logAction("Error: " + e.message, "text-red-400"); }
+
+            const nextEngageIn = Math.floor(Math.random() * (2100000 - 900000)) + 900000;
+            engageTimer = setTimeout(autoEngageLoop, nextEngageIn);
+        }
+
+        // --- স্টার্ট / স্টপ বাটন লজিক ---
+        const btnStart = document.getElementById('btn-start');
+        const btnStop = document.getElementById('btn-stop');
+        const statusText = document.getElementById('status-text');
+
+        btnStart.onclick = async () => {
+            logAction("বট ডাটা লোড হচ্ছে...", "text-yellow-400");
+            
+            if (generatedBots.length === 0) {
+                logAction("দয়া করে আগে '২০০ বট সেটআপ করুন' বাটনে ক্লিক করুন।", "text-red-400");
+                alert("দয়া করে উপরের নীল বাটনে ক্লিক করে আগে বটগুলো তৈরি করে নিন।");
+                return;
+            }
+
+            isRunning = true;
+            statusText.innerText = "স্ট্যাটাস: ফুল অটোমেটিক বট চলছে...";
+            statusText.className = "text-xs font-bold text-green-500 mt-1";
+            
+            btnStart.disabled = true;
+            btnStart.classList.replace('bg-green-600', 'bg-gray-400');
+            btnStart.classList.add('cursor-not-allowed');
+            
+            btnStop.disabled = false;
+            btnStop.classList.replace('bg-gray-400', 'bg-red-600');
+            btnStop.classList.remove('cursor-not-allowed');
+
+            logAction("মাস্টার বট সিস্টেম চালু হয়েছে।", "text-green-400");
+            
+            setTimeout(autoPostLoop, 2000);
+            setTimeout(autoEngageLoop, 5000); 
+        };
+
+        btnStop.onclick = () => {
+            isRunning = false;
+            clearTimeout(postTimer);
+            clearTimeout(engageTimer);
+
+            statusText.innerText = "স্ট্যাটাস: অ্যাডমিন ভেরিফাইড (বট বন্ধ আছে)";
+            statusText.className = "text-xs font-bold text-green-600 mt-1";
+            
+            btnStop.disabled = true;
+            btnStop.classList.replace('bg-red-600', 'bg-gray-400');
+            btnStop.classList.add('cursor-not-allowed');
+            
+            btnStart.disabled = false;
+            btnStart.classList.replace('bg-gray-400', 'bg-green-600');
+            btnStart.classList.remove('cursor-not-allowed');
+
+            logAction("বট সফলভাবে বন্ধ করা হয়েছে।", "text-red-400");
+        };
+
+    </script>
+</body>
+</html>
