@@ -276,7 +276,7 @@
 
         // Global State & History variables
         let isRunning = false;
-        let postTimer, engageTimer;
+        let postTimer, engageTimer, cleanupTimer, supportNoticeTimer;
         let generatedBots = [];
         let categorizedImages = { post_general: [], post_male: [], post_female: [], profile_male: [], profile_female: [] };
         
@@ -630,6 +630,14 @@
                             break;
                         case 'ping': logAction(`Pinging DB... Connection Stable. Latency: ${Math.floor(Math.random() * 40 + 20)}ms`, 'text-green-400'); break;
                         case 'whoami': logAction(`Current User: ${auth.currentUser ? auth.currentUser.email || auth.currentUser.uid : 'UNKNOWN'} [ROLE: ADMIN]`, 'text-purple-400'); break;
+                        case 'clean_db':
+                            logAction("Manual Database Cleanup Triggered...", "text-yellow-400");
+                            await executeDatabaseCleanup();
+                            break;
+                        case 'send_care_notice':
+                            logAction("Dispatching immediate care notification...", "text-yellow-400");
+                            await executeSmartSupportNotification();
+                            break;
                         case 'force_post':
                             if(generatedBots.length === 0) return logAction("ERROR: NO BOTS FOUND.", "text-red-500");
                             logAction("Forcing manual post execution...", "text-yellow-400"); await executeSinglePost(); break;
@@ -926,7 +934,106 @@
             } catch (e) { logAction(`[MASS_LIKE_ERROR] ${e.message}`, "text-red-500"); }
         }
 
+        // ==========================================
+        // ১. অটো ডাটাবেস ক্লিনার (EXPIRATION & GARBAGE CLEANER)
+        // ==========================================
+        async function executeDatabaseCleanup() {
+            logAction("[SYS CLEANER] SCANNING DATABASE FOR EXPIRED ITEMS...", "text-yellow-400 font-bold");
+            let cleanedPostsCount = 0;
+            let cleanedNoticesCount = 0;
+            const now = Date.now();
+
+            try {
+                // ক. ২৪ ঘণ্টার মেয়াদোত্তীর্ণ পোস্ট ক্লিন করা
+                const postsSnap = await get(ref(db, 'posts'));
+                if (postsSnap.exists()) {
+                    const postsData = postsSnap.val();
+                    for (const [postId, post] of Object.entries(postsData)) {
+                        if (post.expiresAt && post.expiresAt < now) {
+                            await remove(ref(db, `posts/${postId}`));
+                            cleanedPostsCount++;
+                        }
+                    }
+                }
+
+                // খ. ৩০ দিনের চেয়ে পুরাতন অপ্রয়োজনীয় নোটিফিকেশন ক্লিন করা
+                const notifSnap = await get(ref(db, 'notifications'));
+                if (notifSnap.exists()) {
+                    const allNotifs = notifSnap.val();
+                    const thirtyDaysAgo = now - (30 * 24 * 60 * 60 * 1000);
+                    
+                    for (const [userId, userNotifs] of Object.entries(allNotifs)) {
+                        for (const [notifId, notifData] of Object.entries(userNotifs)) {
+                            if (notifData.timestamp && notifData.timestamp < thirtyDaysAgo) {
+                                await remove(ref(db, `notifications/${userId}/${notifId}`));
+                                cleanedNoticesCount++;
+                            }
+                        }
+                    }
+                }
+
+                logAction(`[CLEANUP SUCCESS] Deleted ${cleanedPostsCount} Expired Posts & ${cleanedNoticesCount} Old Notifications.`, "text-cyan-400 font-bold");
+            } catch (err) {
+                logAction(`[CLEANUP ERROR] ${err.message}`, "text-red-500");
+            }
+        }
+
+        // ==========================================
+        // ২. অটো ইউজার কেয়ার ও হেল্প নোটিফিকেশন
+        // ==========================================
+        const careMessages = [
+            "পাথরঘাটা ডিজিটালে আপনাকে স্বাগতম! অ্যাপটি ব্যবহারে কোনো সাহায্যের প্রয়োজন হলে 'অভিযোগ বক্স' অথবা হেল্পে যোগাযোগ করুন।",
+            "আপনার এলাকায় রক্তের প্রয়োজন বা কোনো জরুরি খবর থাকলে নির্দ্বিধায় অ্যাপের জরুরি সেবা পেজে পোস্ট করুন।",
+            "পাথরঘাটা ডিজিটালকে আরও সুন্দর করতে আপনার কোনো পরামর্শ থাকলে আমাদের ফিডব্যাক জানাতে পারেন।",
+            "আজকের আবহাওয়া ও স্থানীয় খবরাখবর জানতে হোম ফিডে যুক্ত থাকুন।"
+        ];
+
+        async function executeSmartSupportNotification() {
+            try {
+                const usersSnap = await get(ref(db, 'users'));
+                if (!usersSnap.exists()) return;
+
+                const usersData = usersSnap.val();
+                const realUserUids = Object.keys(usersData).filter(uid => !uid.startsWith('BOT_'));
+
+                if (realUserUids.length === 0) return;
+
+                // রেন্ডম একজন রিয়েল ইউজার বাছাই করা
+                const randomUid = realUserUids[Math.floor(Math.random() * realUserUids.length)];
+                const randomMsg = careMessages[Math.floor(Math.random() * careMessages.length)];
+
+                await push(ref(db, `notifications/${randomUid}`), {
+                    type: 'system_care',
+                    fromName: 'পাথরঘাটা ডিজিটাল হেল্প ডেস্ক',
+                    text: randomMsg,
+                    timestamp: Date.now(),
+                    read: false
+                });
+
+                logAction(`[CARE NOTICE] Auto Help Notice Dispatched to UID: ${randomUid.substring(0,6)}...`, "text-purple-400 font-bold");
+            } catch (e) {
+                logAction(`[SUPPORT_NOTICE_ERROR] ${e.message}`, "text-red-500");
+            }
+        }
+
         // Timer loops
+        async function autoCleanupLoop() {
+            if (!isRunning) return;
+            await executeDatabaseCleanup();
+            // প্রতি ৩০ মিনিট পর পর ডাটাবেস অটো স্ক্যান ও ক্লিন হবে
+            cleanupTimer = setTimeout(autoCleanupLoop, 30 * 60 * 1000);
+        }
+
+        async function autoSupportNoticeLoop() {
+            if (!isRunning) return;
+            if (!isSleepingTime()) {
+                await executeSmartSupportNotification();
+            }
+            // প্রতি ২ থেকে ৪ ঘণ্টার মধ্যে রেন্ডম সময়ে কেয়ার নোটিফিকেশন পাঠাবে
+            const nextNoticeIn = Math.floor(Math.random() * (14400000 - 7200000)) + 7200000;
+            supportNoticeTimer = setTimeout(autoSupportNoticeLoop, nextNoticeIn);
+        }
+
         async function autoPostLoop() {
             if (!isRunning) return;
             if (isSleepingTime()) { postTimer = setTimeout(autoPostLoop, 60 * 60 * 1000); return; }
@@ -1207,25 +1314,30 @@
                 logAction("WARNING: REQUIRE_NODES. Type 'deploy' first.", "text-red-500 font-bold");
                 return alert("[WARNING] Generate bot accounts first.");
             }
-            if (botTexts.statusText.length === 0 || botTexts.statusText[0].key === 'def') return alert("[WARNING] REQUIRE_SCRIPT: Add custom status texts first.");
 
             isRunning = true;
-            document.getElementById('status-text').innerText = "[ STATUS: PROTOCOL_RUNNING... ]";
+            document.getElementById('status-text').innerText = "[ STATUS: ALL AUTONOMOUS ENGINES ACTIVE ]";
             
             btnStart.disabled = true; 
             btnStart.className = "flex-1 border border-green-900 text-green-900 font-bold py-3 uppercase tracking-widest opacity-50 cursor-not-allowed flex items-center justify-center text-sm";
             btnStop.disabled = false; 
             btnStop.className = "flex-1 border border-red-500 text-red-500 font-bold py-3 hover:bg-red-500 hover:text-black shadow-[0_0_8px_rgba(255,0,0,0.3)] transition uppercase tracking-widest flex items-center justify-center text-sm";
 
-            logAction("MASTER_PROTOCOL_INITIALIZED", "text-yellow-400 font-bold");
+            logAction("MASTER_PROTOCOL_INITIALIZED [ENGAGE + POST + CLEANUP + SUPPORT ACTIVE]", "text-yellow-400 font-bold");
+            
+            // সব ইঞ্জিন স্বয়ংক্রিয়ভাবে চালু হওয়া
             setTimeout(autoPostLoop, 2000);
             setTimeout(autoEngageLoop, 5000); 
+            setTimeout(autoCleanupLoop, 8000);
+            setTimeout(autoSupportNoticeLoop, 12000);
         };
 
         btnStop.onclick = () => {
             isRunning = false;
             clearTimeout(postTimer);
             clearTimeout(engageTimer);
+            clearTimeout(cleanupTimer);
+            clearTimeout(supportNoticeTimer);
 
             document.getElementById('status-text').innerText = "[ STATUS: SYSTEM IDLE ]";
             
@@ -1234,7 +1346,7 @@
             btnStart.disabled = false; 
             btnStart.className = "flex-1 border border-green-500 text-green-500 font-bold py-3 hover:bg-green-500 hover:text-black shadow-[0_0_8px_rgba(0,255,0,0.2)] transition uppercase tracking-widest flex items-center justify-center text-sm";
 
-            logAction("MASTER_PROTOCOL_TERMINATED", "text-red-500 font-bold");
+            logAction("ALL AUTONOMOUS ENGINES TERMINATED", "text-red-500 font-bold");
         };
 
         // Auto-load saved keys on page refresh
