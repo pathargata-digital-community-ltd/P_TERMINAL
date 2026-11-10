@@ -18,3 +18,11 @@
 - [x] Add bounded Firebase validation contracts for `feature_flags` and `emergency_controls`.
 - [ ] Connect Native App write paths and screens to consume these flags safely.
 - [ ] Add rollback preview and two-person approval for global emergency switches.
+
+## Phase 3 — Rollback Preview and Approval Foundation
+
+- [x] Show the latest audited change's before/after state in a bounded rollback preview.
+- [ ] Store a dedicated immutable rollback snapshot for every sensitive change.
+- [ ] Require a second Super Admin approval for global maintenance and read-only changes.
+- [ ] Add approve, reject, expire, and cancel states with actor and timestamp.
+- [ ] Add an explicit rollback action only after snapshot and approval rules are validated.
