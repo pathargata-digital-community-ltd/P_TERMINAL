@@ -10,3 +10,11 @@
 - [ ] Safe command terminal supports status, health, approved feature controls, help, and clear only.
 - [ ] No fake activity, bot deployment, browser secret storage, unrestricted delete, or routine Admin App workflow is present.
 - [ ] Validate HTML/JavaScript and rules JSON without writing production data.
+
+## Phase 2 — Emergency Controls and Feature Flags
+
+- [x] Add Super Admin-only Emergency Controls UI for global maintenance and read-only emergency mode.
+- [x] Add audited Feature Flags UI for post creation, media upload, messaging, registration, public profiles, and push notifications.
+- [x] Add bounded Firebase validation contracts for `feature_flags` and `emergency_controls`.
+- [ ] Connect Native App write paths and screens to consume these flags safely.
+- [ ] Add rollback preview and two-person approval for global emergency switches.
