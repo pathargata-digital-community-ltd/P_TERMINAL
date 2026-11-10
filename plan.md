@@ -7,7 +7,7 @@
 ## Core principles
 
 1. **Separation of duties**: routine moderation and support remain in the Admin App; high-risk configuration and infrastructure controls remain in this Terminal.
-2. **Explicit authorization**: the Terminal requires both Firebase `admin: true` and `superAdmin: true` custom claims.
+2. **Explicit authorization**: the Terminal accepts only the configured Firebase email `admin@gmail.com` after email/password sign-in; custom claims are intentionally not required for this temporary test setup.
 3. **Audited writes**: sensitive changes are confirmed, require a reason, and write the configuration change and audit event atomically.
 4. **Safe by default**: no fake engagement, no browser secrets, no unrestricted deletion, and no production mutation during validation.
 
@@ -22,7 +22,7 @@
 
 ## Data and security contract
 
-The Native App Firebase rules own authorization. `admin_settings` and `marketplace_controls` remain protected by `auth.token.admin === true`; `super_admin_audit` is readable and writable only by `auth.token.superAdmin === true` and validates the actor and bounded event fields. The browser never receives service-account keys or provider secrets.
+The Native App Firebase rules own authorization. Temporary test authorization uses the exact Firebase email `admin@gmail.com` (`auth.token.email`); no custom claims are required. This is intentionally a short-term single-account setup and should be migrated back to server-managed claims before wider use. The browser never receives service-account keys or provider secrets.
 
 ## Out of scope for this phase
 
