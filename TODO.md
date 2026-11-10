@@ -26,5 +26,5 @@
 - [x] Link each immutable snapshot ID into its corresponding audit event and rollback preview.
 - [x] Require a second, different Super Admin approval for global maintenance and read-only changes before final setting apply.
 - [x] Add pending, approve, and reject states with requester/approver actor IDs, reason, and timestamps.
-- [ ] Add expire and cancel states with actor and timestamp.
-- [ ] Add an explicit rollback action only after snapshot and approval rules are validated.
+- [x] Add expire and cancel states with actor and timestamp; expiry is accepted only after the 30-minute TTL.
+- [x] Add an explicit rollback request from the latest applied snapshot; rollback still requires the two-person approval workflow.
