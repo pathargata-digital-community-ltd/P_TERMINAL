@@ -24,6 +24,7 @@
 - [x] Show the latest audited change's before/after state in a bounded rollback preview.
 - [x] Store a dedicated immutable rollback snapshot for every sensitive change with snapshot ID, target path, before state, requested after state, requester UID, created time, reason, request ID, and status.
 - [x] Link each immutable snapshot ID into its corresponding audit event and rollback preview.
-- [ ] Require a second Super Admin approval for global maintenance and read-only changes.
-- [ ] Add approve, reject, expire, and cancel states with actor and timestamp.
+- [x] Require a second, different Super Admin approval for global maintenance and read-only changes before final setting apply.
+- [x] Add pending, approve, and reject states with requester/approver actor IDs, reason, and timestamps.
+- [ ] Add expire and cancel states with actor and timestamp.
 - [ ] Add an explicit rollback action only after snapshot and approval rules are validated.
